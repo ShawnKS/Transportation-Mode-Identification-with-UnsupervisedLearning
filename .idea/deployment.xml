@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" autoUpload="Always" serverName="SCAIlab" autoUploadExternalChanges="true">
+    <serverData>
+      <paths name="SCAIlab">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/xiaozhuangs/Deep-Semi-Supervised-GPS-Transport-Mode" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="xiaozhuangs@10.20.77.24:22">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/xiaozhuangs/Deep-Semi-Supervised-GPS-Transport-Mode" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
+  </component>
+</project>
