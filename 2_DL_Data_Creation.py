@@ -26,7 +26,7 @@ max_percentile = 100
 
 
 def take_speed_percentile(trip, min_percentile, max_percentile):
-    min_threshold = np.percentile(trip[1], min_percentile)
+    min_threshold = np.percentile(trip[1], min_percentile)#获取百分比为percentile处的数据
     max_threshold = np.percentile(trip[1], max_percentile)
     index_min = np.where(trip[1] >= min_threshold)[0]
     index_max = np.where(trip[1] <= max_threshold)[0]

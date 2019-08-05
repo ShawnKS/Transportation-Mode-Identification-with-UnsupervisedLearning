@@ -15,7 +15,7 @@ min_distance = 150
 min_time = 60
 
 
-filename = '../Mode-codes-Revised/paper2_Trajectory_Label.pickle'
+filename = '/home/xiaozhuangs/Transportation-Mode-Identification-with-UnsupervisedLearning/paper2_Trajectory_Label.pickle'
 with open(filename, 'rb') as f:
     trajectory_all_user_with_label, trajectory_all_user_wo_label = pickle.load(f)
 

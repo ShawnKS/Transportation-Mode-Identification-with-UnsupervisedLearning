@@ -2,8 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="89ddf217-6794-4a51-bf00-cd673098c3c1" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/2-CNN-TF.py" beforeDir="false" afterPath="$PROJECT_DIR$/2-CNN-TF.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/2_Label_Trajectory_All.py" beforeDir="false" afterPath="$PROJECT_DIR$/2_Label_Trajectory_All.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/AE_process" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data_preprocess.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/deployment.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/deployment.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/2-Conv-Semi-AE+Cls.py" beforeDir="false" afterPath="$PROJECT_DIR$/2-Conv-Semi-AE+Cls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/2_DL_Data_Creation.py" beforeDir="false" afterPath="$PROJECT_DIR$/2_DL_Data_Creation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/2_Instance_Creation.py" beforeDir="false" afterPath="$PROJECT_DIR$/2_Instance_Creation.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -11,8 +16,40 @@
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="DockManager">
+    <window id="1">
+      <content type="file-editors">
+        <state>
+          <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+            <file pinned="false" current-in-tab="false">
+              <entry file="file://$PROJECT_DIR$/README.md">
+                <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+                  <state split_layout="SPLIT">
+                    <first_editor />
+                    <second_editor />
+                  </state>
+                </provider>
+              </entry>
+            </file>
+            <file pinned="false" current-in-tab="true">
+              <entry file="file://$PROJECT_DIR$/2-Conv-Semi-AE+Cls.py">
+                <provider selected="true" editor-type-id="text-editor">
+                  <state relative-caret-position="406">
+                    <caret line="44" selection-start-line="44" selection-end-line="44" />
+                    <folding>
+                      <element signature="e#0#18#0" expanded="true" />
+                    </folding>
+                  </state>
+                </provider>
+              </entry>
+            </file>
+          </leaf>
+        </state>
+      </content>
+    </window>
+  </component>
   <component name="FileEditorManager">
-    <splitter split-orientation="horizontal" split-proportion="0.598677">
+    <splitter split-orientation="horizontal" split-proportion="0.8417861">
       <split-first>
         <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
           <file pinned="false" current-in-tab="false">
@@ -30,7 +67,8 @@
           <file pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/2-Conv-Semi-2-Steps.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state>
+                <state relative-caret-position="72">
+                  <caret line="235" selection-start-line="235" selection-end-line="235" />
                   <folding>
                     <element signature="e#0#18#0" expanded="true" />
                   </folding>
@@ -39,9 +77,22 @@
             </entry>
           </file>
           <file pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/2-Conv-Semi-AE+Cls.py">
+            <entry file="file://$PROJECT_DIR$/2_Label_Trajectory_All.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state>
+                <state relative-caret-position="2668">
+                  <caret line="95" column="36" selection-start-line="95" selection-start-column="36" selection-end-line="95" selection-end-column="36" />
+                  <folding>
+                    <element signature="e#0#13#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/2_DL_Data_Creation.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="-3133">
+                  <caret line="35" selection-start-line="35" selection-end-line="35" />
                   <folding>
                     <element signature="e#0#18#0" expanded="true" />
                   </folding>
@@ -50,15 +101,20 @@
             </entry>
           </file>
           <file pinned="false" current-in-tab="true">
-            <entry file="file://$PROJECT_DIR$/2_Label_Trajectory_All.py">
+            <entry file="file://$PROJECT_DIR$/AE_process">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="608">
-                  <caret line="107" column="18" selection-start-line="107" selection-start-column="11" selection-end-line="107" selection-end-column="41" />
+                <state relative-caret-position="203">
+                  <caret line="7" column="29" lean-forward="true" selection-start-line="7" selection-start-column="29" selection-end-line="7" selection-end-column="29" />
                   <folding>
-                    <element signature="e#0#13#0" expanded="true" />
+                    <element signature="e#0#21#0" expanded="true" />
                   </folding>
                 </state>
               </provider>
+            </entry>
+          </file>
+          <file pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/data_preprocess.py">
+              <provider selected="true" editor-type-id="text-editor" />
             </entry>
           </file>
         </leaf>
@@ -68,7 +124,8 @@
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/2-Conv-Semi-AE+Cls.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="-1218">
+                <state relative-caret-position="188">
+                  <caret line="28" column="23" selection-start-line="28" selection-start-column="23" selection-end-line="28" selection-end-column="23" />
                   <folding>
                     <element signature="e#0#18#0" expanded="true" />
                   </folding>
@@ -77,11 +134,13 @@
             </entry>
           </file>
           <file pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/README.md">
-              <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
-                <state split_layout="SPLIT">
-                  <first_editor />
-                  <second_editor />
+            <entry file="file://$PROJECT_DIR$/2_Instance_Creation.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="1827">
+                  <caret line="69" column="9" selection-start-line="69" selection-start-column="9" selection-end-line="69" selection-end-column="9" />
+                  <folding>
+                    <element signature="e#0#18#0" expanded="true" />
+                  </folding>
                 </state>
               </provider>
             </entry>
@@ -90,10 +149,27 @@
       </split-second>
     </splitter>
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
   <component name="FindInProjectRecents">
     <findStrings>
       <find>trajectory_all_user_wo_label</find>
       <find>f</find>
+      <find>C</find>
+      <find>INput_combined</find>
+      <find>encoder_network</find>
+      <find>input_co</find>
+      <find>X_unlabeled</find>
+      <find>Train_x_comb</find>
+      <find>input_combined</find>
+      <find>feed_dic</find>
+      <find>X_ae</find>
+      <find>Train_X_Comb</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -104,18 +180,12 @@
       <list>
         <option value="$PROJECT_DIR$/2-CNN-TF.py" />
         <option value="$PROJECT_DIR$/2_Label_Trajectory_All.py" />
-      </list>
-    </option>
-  </component>
-  <component name="ProjectConfigurationFiles">
-    <option name="files">
-      <list>
-        <option value="$PROJECT_DIR$/.idea/Deep-Semi-Supervised-GPS-Transport-Mode.iml" />
-        <option value="$PROJECT_DIR$/.idea/misc.xml" />
-        <option value="$PROJECT_DIR$/.idea/modules.xml" />
-        <option value="$PROJECT_DIR$/.idea/vcs.xml" />
-        <option value="$PROJECT_DIR$/.idea/deployment.xml" />
-        <option value="$PROJECT_DIR$/.idea/webServers.xml" />
+        <option value="$PROJECT_DIR$/2_DL_Data_Creation.py" />
+        <option value="$PROJECT_DIR$/2-Conv-Semi-AE+Cls.py" />
+        <option value="$PROJECT_DIR$/2_Instance_Creation.py" />
+        <option value="$PROJECT_DIR$/2-Conv-Semi-2-Steps.py" />
+        <option value="$PROJECT_DIR$/data_preprocess.py" />
+        <option value="$PROJECT_DIR$/AE_process" />
       </list>
     </option>
   </component>
@@ -129,22 +199,10 @@
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
     </navigator>
-    <panes>
-      <pane id="ProjectPane">
-        <subPane>
-          <expand>
-            <path>
-              <item name="Deep-Semi-Supervised-GPS-Transport-Mode" type="b2602c69:ProjectViewProjectNode" />
-              <item name="Deep-Semi-Supervised-GPS-Transport-Mode" type="462c0819:PsiDirectoryNode" />
-            </path>
-          </expand>
-          <select />
-        </subPane>
-      </pane>
-      <pane id="Scope" />
-    </panes>
+    <panes />
   </component>
   <component name="PropertiesComponent">
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="WebServerToolWindowPanel.toolwindow.highlight.mappings" value="true" />
     <property name="WebServerToolWindowPanel.toolwindow.highlight.symlinks" value="true" />
@@ -168,7 +226,51 @@
       </list>
     </option>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.2_Instance_Creation">
+    <configuration name="2-Conv-Semi-AE+Cls" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="Deep-Semi-Supervised-GPS-Transport-Mode" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/2-Conv-Semi-AE+Cls.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="2_Instance_Creation" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="Deep-Semi-Supervised-GPS-Transport-Mode" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/2_Instance_Creation.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="2_Label_Trajectory_All" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="Deep-Semi-Supervised-GPS-Transport-Mode" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -193,6 +295,8 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.2_Instance_Creation" />
+        <item itemvalue="Python.2-Conv-Semi-AE+Cls" />
         <item itemvalue="Python.2_Label_Trajectory_All" />
       </list>
     </recent_temporary>
@@ -210,11 +314,16 @@
       <workItem from="1564555054929" duration="4405000" />
       <workItem from="1564567979187" duration="352000" />
       <workItem from="1564568790750" duration="1791000" />
+      <workItem from="1564571064215" duration="1758000" />
+      <workItem from="1564621257770" duration="9051000" />
+      <workItem from="1564634713971" duration="1062000" />
+      <workItem from="1564711617434" duration="11876000" />
+      <workItem from="1564969425719" duration="2940000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="6548000" />
+    <option name="totallyTimeSpent" value="33235000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -227,20 +336,21 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="1974" y="-8" width="1874" height="1096" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" weight="0.1427784" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.2765073" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.21829522" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.329718" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" order="8" weight="0.329718" />
-      <window_info anchor="bottom" id="File Transfer" order="9" weight="0.32952183" />
+      <window_info anchor="bottom" id="File Transfer" order="9" visible="true" weight="0.1049896" />
       <window_info anchor="bottom" id="Database Changes" order="10" />
       <window_info anchor="bottom" id="Terminal" order="11" weight="0.329718" />
       <window_info anchor="bottom" id="Event Log" order="12" side_tool="true" />
@@ -297,9 +407,13 @@
     </option>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/Transportation_Mode_Identification_with_UnsupervisedLearning$2_Label_Trajectory_All.coverage" NAME="2_Label_Trajectory_All Coverage Results" MODIFIED="1564571240514" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Transportation_Mode_Identification_with_UnsupervisedLearning$2_Instance_Creation.coverage" NAME="2_Instance_Creation Coverage Results" MODIFIED="1564714553266" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Transportation_Mode_Identification_with_UnsupervisedLearning$2_Conv_Semi_AE_Cls.coverage" NAME="2-Conv-Semi-AE+Cls Coverage Results" MODIFIED="1564624154685" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/Deep_Semi_Supervised_GPS_Transport_Mode$2_Label_Trajectory_All.coverage" NAME="2_Label_Trajectory_All Coverage Results" MODIFIED="1564569792902" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/FCSgitTransportation-Mode-Identification-with-UnsupervisedLearning" />
     <entry file="file://$PROJECT_DIR$/2-CNN-TF.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="58">
@@ -310,9 +424,20 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/2-Conv-Semi-2-Steps.py">
+    <entry file="file://$PROJECT_DIR$/2_Label_Trajectory_All.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state>
+        <state relative-caret-position="2668">
+          <caret line="95" column="36" selection-start-line="95" selection-start-column="36" selection-end-line="95" selection-end-column="36" />
+          <folding>
+            <element signature="e#0#13#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/2_Instance_Creation.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1827">
+          <caret line="69" column="9" selection-start-line="69" selection-start-column="9" selection-end-line="69" selection-end-column="9" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>
@@ -329,19 +454,43 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/2-Conv-Semi-AE+Cls.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state>
+        <state relative-caret-position="188">
+          <caret line="28" column="23" selection-start-line="28" selection-start-column="23" selection-end-line="28" selection-end-column="23" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/2_Label_Trajectory_All.py">
+    <entry file="file://$PROJECT_DIR$/2-Conv-Semi-2-Steps.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="608">
-          <caret line="107" column="18" selection-start-line="107" selection-start-column="11" selection-end-line="107" selection-end-column="41" />
+        <state relative-caret-position="72">
+          <caret line="235" selection-start-line="235" selection-end-line="235" />
           <folding>
-            <element signature="e#0#13#0" expanded="true" />
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/2_DL_Data_Creation.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-3133">
+          <caret line="35" selection-start-line="35" selection-end-line="35" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/data_preprocess.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/AE_process">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="203">
+          <caret line="7" column="29" lean-forward="true" selection-start-line="7" selection-start-column="29" selection-end-line="7" selection-end-column="29" />
+          <folding>
+            <element signature="e#0#21#0" expanded="true" />
           </folding>
         </state>
       </provider>

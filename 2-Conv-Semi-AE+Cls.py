@@ -39,7 +39,7 @@ initializer = tf.contrib.layers.xavier_initializer(uniform=True, seed=None, dtyp
 
 # Import the data
 #filename = '../Mode-codes-Revised/paper2_data_for_DL_train_val_test.pickle'
-filename = '../Mode-codes-Revised/paper2_data_for_DL_kfold_dataset_RL.pickle'
+filename = '/home/xiaozhuangs/Transportation-Mode-Identification-with-UnsupervisedLearning/paper2_data_for_DL_kfold_dataset_RL.pickle'
 with open(filename, 'rb') as f:
     kfold_dataset, X_unlabeled = pickle.load(f)
 
