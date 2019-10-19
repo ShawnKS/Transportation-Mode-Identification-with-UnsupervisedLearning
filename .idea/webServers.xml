@@ -2,8 +2,8 @@
 <project version="4">
   <component name="WebServers">
     <option name="servers">
-      <webServer id="b5af8785-94a1-4db1-a498-59db01d2e9d2" name="SCAIlab" url="http://10.20.77.24">
-        <fileTransfer host="10.20.77.24" port="22" accessType="SFTP">
+      <webServer id="758a9626-65fb-4d4c-95f2-2c257e1fccfe" name="SCAI-G2" url="http://10.20.35.243">
+        <fileTransfer host="10.20.35.243" port="22" rootFolder="/home/sxz" accessType="SFTP">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
           </advancedOptions>

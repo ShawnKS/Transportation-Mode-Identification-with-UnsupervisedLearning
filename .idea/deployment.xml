@@ -1,25 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="xiaozhuangs@10.20.77.24:22" autoUploadExternalChanges="true">
+  <component name="PublishConfigData" autoUpload="Always" serverName="sxz@10.20.35.243:22" autoUploadExternalChanges="true">
     <serverData>
-      <paths name="SCAIlab">
+      <paths name="SCAI-G2">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/xiaozhuangs/Transportation-Mode-Identification-with-UnsupervisedLearning" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/Transportation-Mode-Identification-with-UnsupervisedLearning" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
-      <paths name="xiaozhuangs@10.20.77.24:22">
+      <paths name="sxz@10.20.35.243:22">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/xiaozhuangs/Deep-Semi-Supervised-GPS-Transport-Mode" local="$PROJECT_DIR$" />
-          </mappings>
-        </serverdata>
-      </paths>
-      <paths name="xiaozhuangs@10.20.77.24:22 (1)">
-        <serverdata>
-          <mappings>
-            <mapping deploy="/home/xiaozhuangs/Deep-Semi-Supervised-GPS-Transport-Mode" local="$PROJECT_DIR$" />
+            <mapping deploy="/tmp/pycharm_project_752" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>
