@@ -12,7 +12,7 @@
       <paths name="sxz@10.20.35.243:22">
         <serverdata>
           <mappings>
-            <mapping deploy="/tmp/pycharm_project_752" local="$PROJECT_DIR$" />
+            <mapping deploy="/home/sxz/Transportation-Mode-Identification-with-UnsupervisedLearning/tmp" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>

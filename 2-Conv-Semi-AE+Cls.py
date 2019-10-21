@@ -1,3 +1,6 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+
 import numpy as np
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 import random
@@ -39,9 +42,23 @@ initializer = tf.contrib.layers.xavier_initializer(uniform=True, seed=None, dtyp
 
 # Import the data
 #filename = '../Mode-codes-Revised/paper2_data_for_DL_train_val_test.pickle'
-filename = '/home/xiaozhuangs/Transportation-Mode-Identification-with-UnsupervisedLearning/paper2_data_for_DL_kfold_dataset_RL.pickle'
+filename = '/home/sxz/data/geolife_Data/paper2_data_for_DL_kfold_dataset_RL.pickle'
 with open(filename, 'rb') as f:
     kfold_dataset, X_unlabeled = pickle.load(f)
+    # print(len(kfold_dataset[1][1]))
+    # print(np.array(kfold_dataset[1][4]).shape)
+    # print(X_unlabeled)
+    # print(np.array(X_unlabeled).shape)
+    # print(len(kfold_dataset))
+    # print(len(X_unlabeled))
+#the length of Kfold_dataset is 5(the data already labelled)
+#every part in kfold_dataset contains 441 segments, which is formed as a 
+#structure  (441 × 1 × 248 × 4) (441,) (110 × 1 × 248 × 4) (110 × 5) (110,)
+#totoal is 5×441 × 1 × 248 × 4
+
+#the lenth of X_unlabeled is size 4310×
+#structure is (4310 × 1 × 248 ×4 )
+# #
 
 
 # Encoder Network
@@ -202,21 +219,35 @@ def ensemble_train_set(Train_X, Train_Y):
 
 def loss_acc_evaluation(Test_X, Test_Y, loss_cls, accuracy_cls, input_labeled, true_label, k, sess):
     metrics = []
-    for i in range(len(Test_X) // batch_size):
-        Test_X_batch = Test_X[i * batch_size:(i + 1) * batch_size]
-        Test_Y_batch = Test_Y[i * batch_size:(i + 1) * batch_size]
+    i = 0
+    print(Test_X)
+    batch_size_val = 10
+    print("lenth of Test_X")
+    print(len(Test_X))
+    print(len(Test_X) // batch_size_val)
+    print(batch_size_val)
+#     global i
+#     global Test_X_batch
+#     global Test_Y_
+    for i in range(len(Test_X) // batch_size_val):
+        Test_X_batch = Test_X[i * batch_size_val:(i + 1) * batch_size_val]
+        Test_Y_batch = Test_Y[i * batch_size_val:(i + 1) * batch_size_val]
         loss_cls_, accuracy_cls_ = sess.run([loss_cls, accuracy_cls],
                                             feed_dict={input_labeled: Test_X_batch,
                                                        true_label: Test_Y_batch})
         metrics.append([loss_cls_, accuracy_cls_])
-    Test_X_batch = Test_X[(i + 1) * batch_size:]
-    Test_Y_batch = Test_Y[(i + 1) * batch_size:]
+#     global i
+    Test_X_batch = Test_X[(i + 1) * batch_size_val:]
+    Test_Y_batch = Test_Y[(i + 1) * batch_size_val:]
     if len(Test_X_batch) >= 1:
         loss_cls_, accuracy_cls_ = sess.run([loss_cls, accuracy_cls],
                                         feed_dict={input_labeled: Test_X_batch,
                                                    true_label: Test_Y_batch})
         metrics.append([loss_cls_, accuracy_cls_])
+    print(metrics)
     mean_ = np.mean(np.array(metrics), axis=0)
+    print("___________________________________")
+    print(mean_)
     #print('Epoch Num {}, Loss_cls_Val {}, Accuracy_Val {}'.format(k, mean_[0], mean_[1]))
     return mean_[0], mean_[1]
 
@@ -232,36 +263,101 @@ def prediction_prob(Test_X, classifier_output, input_labeled, sess):
     return prediction
 
 
+#lenth of Test_X
+#22
+# Traceback (most recent call last):
+#   File "2-Conv-Semi-AE+Cls.py", line 446, in <module>
+#     label_proportions=[0.15, 0.35], num_filter=[32, 32, 64, 64])
+#   File "2-Conv-Semi-AE+Cls.py", line 427, in training_all_folds
+#     test_accuracy, f1_macro, f1_weight = training(kfold_dataset[i], X_unlabeled=X_unlabeled, seed=7, prop=prop, num_filter_ae_cls_all=num_filter)
+#   File "2-Conv-Semi-AE+Cls.py", line 355, in training
+#     loss_val, acc_val = loss_acc_evaluation(Val_X, Val_Y, loss_cls, accuracy_cls, input_labeled, true_label, k, sess)
+#   File "2-Conv-Semi-AE+Cls.py", line 237, in loss_acc_evaluation
+#     return mean_[0], mean_[1]
+# IndexError: invalid index to scalar variable.
+
+
 def train_val_split(Train_X, Train_Y_ori):
     val_index = []
     for i in range(num_class):
+        # print(np.where(Train_Y_ori==i))
+        # print(np.where(Train_Y_ori==i)[0])
+        #This match the data to the label
         label_index = np.where(Train_Y_ori == i)[0]
+        print(len(label_index))
+        
+        #round()方法返回浮点数x的四舍五入值。
+
+        # print("___________")
+        # print("label_index")
+        # print("label_index")
+        # print("label_index")
+        # print("label_index")
+        # print("label_index")
+        # print(label_index)
+        # print(label_index)
+        # print(label_index)
+        # print(label_index)
+        # print(label_index)
+        # print(label_index)
+        # print(label_index)
+        # print(label_index)
+        # print(label_index)
+        # print(label_index[:round(0.1*len(label_index))])
+        #取前1%
         val_index.append(label_index[:round(0.1*len(label_index))])
+    print(val_index)
     val_index = np.hstack(tuple([label for label in val_index]))
+    print(val_index)
+    # 将不同的array压成一个array,这里是选了百分之十作为验证集
     Val_X = Train_X[val_index]
     Val_Y_ori = Train_Y_ori[val_index]
+    print(np.array(Val_Y_ori).shape)
     Val_Y = keras.utils.to_categorical(Val_Y_ori, num_classes=num_class)
+    #把验证集的one-hot矩阵拼出来
+    print(np.array(Val_Y).shape)
     train_index_ = np.delete(np.arange(0, len(Train_Y_ori)), val_index)
+    #在训练集中去掉验证集
+    print(train_index_)
+    print(np.array(train_index_).shape)
     Train_X = Train_X[train_index_]
+    print(np.array(Train_X).shape)
     Train_Y_ori = Train_Y_ori[train_index_]
     Train_Y = keras.utils.to_categorical(Train_Y_ori, num_classes=num_class)
     return Train_X, Train_Y, Train_Y_ori, Val_X, Val_Y, Val_Y_ori
 
 
 def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae_cls=20):
+    #each time transfer a dataset_fold to here with All unlabeled data
     Train_X = one_fold[0]
     Train_Y_ori = one_fold[1]
+    # ori means its classification
     random.seed(seed)
     np.random.seed(seed)
     random_sample = np.random.choice(len(Train_X), size=round(0.5*len(Train_X)), replace=False, p=None)
-    Train_X = Train_X[random_sample]
+    print('random_sample')
+    print(random_sample)
+    print(Train_X)
+    Train_X1 = Train_X[random_sample]
+
+    #This random_sample generate a (220,) matrix which will random make a 
+    #(220,1,248,4)matrix from (441,1,248,4) if we use the statement A = A[random_sample]
+
+    # print(np.array(Train_X1).shape)
+    # print(np.array(Train_X).shape)
+    # print(np.array(random_sample).shape)
+
     Train_Y_ori = Train_Y_ori[random_sample]
+    #now it's only 220x
+    #将验证集从训练集中抽出来
     Train_X, Train_Y, Train_Y_ori, Val_X, Val_Y, Val_Y_ori = train_val_split(Train_X, Train_Y_ori)
+    #将验证集从训练集中单独抽出来
     Test_X = one_fold[2]
     Test_Y = one_fold[3]
     Test_Y_ori = one_fold[4]
     random_sample = np.random.choice(len(X_unlabeled), size=round(prop * len(X_unlabeled)), replace=False, p=None)
     X_unlabeled = X_unlabeled[random_sample]
+    #随机选择指定量的无标签数据
     Train_X_Comb = X_unlabeled
 
     input_size = list(np.shape(Test_X)[1:])
@@ -340,7 +436,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                 val_loss.update({k: loss_val})
                 val_accuracy.update({k: acc_val})
                 print('====================================================')
-                saver.save(sess, "/Conv-Semi-TF-PS/" + '2/' + str(z) + '/' + str(prop), global_step=k)
+                saver.save(sess, "/home/sxz/data/geolife_Data/Conv-Semi-TF-PS/" + '2/' + str(z) + '/' + str(prop), global_step=k)
                 # save_path = "/Conv-Semi/" + str(prop) + '/' + str(k) + ".ckpt"
                 # checkpoint = os.path.join(os.getcwd(), save_path)
                 # saver.save(sess, checkpoint)
@@ -351,7 +447,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                     # save_path = "/Conv-Semi/" + str(prop) + '/' + str(k-1) + ".ckpt"
                     # checkpoint = os.path.join(os.getcwd(), save_path)
                     max_acc = max(val_accuracy.items(), key=lambda k: k[1])[0]
-                    save_path = "/Conv-Semi-TF-PS/" + '2/' + str(z) + '/' + str(prop) + '-' + str(max_acc)
+                    save_path = "/home/sxz/data/geolife_Data/Conv-Semi-TF-PS/" + '2/' + str(z) + '/' + str(prop) + '-' + str(max_acc)
                     saver.restore(sess, save_path)
                     alfa_val = 1.0
                     beta_val = 0.1
@@ -370,7 +466,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                     # #checkpoint = os.path.join(os.getcwd(), save_path)
                     max_acc = max(val_accuracy.items(), key=lambda k: k[1])[0]
                     # saver.restore(sess, "/Conv-Semi-TF-PS/" + str(prop) + '/' + str(max_acc) + ".ckpt")
-                    save_path = "/Conv-Semi-TF-PS/" + '2/' + str(z) + '/' + str(prop) + '-' + str(max_acc)
+                    save_path = "/home/sxz/data/geolife_Data/Conv-Semi-TF-PS/" + '2/' + str(z) + '/' + str(prop) + '-' + str(max_acc)
                     saver.restore(sess, save_path)
                     num_epoch_ae_cls = k - num_epoch_cls_only - 1
                     alfa_val = 1.5

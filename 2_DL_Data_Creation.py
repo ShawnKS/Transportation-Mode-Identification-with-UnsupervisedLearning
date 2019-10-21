@@ -4,7 +4,7 @@ import keras
 
 # Import the final output from Instance_creation file, which is the filtered trips for all users.
 
-filename = '../Mode-codes-Revised/paper2_trips_motion_features_NotFixedLength_woOutliers.pickle'
+filename = '/home/sxz/data/geolife_Data/paper2_trips_motion_features_NotFixedLength_woOutliers.pickle'
 with open(filename, 'rb') as f:
     trip_motion_all_user_with_label, trip_motion_all_user_wo_label = pickle.load(f)
     #trip_motion_all_user_with_label = trip_motion_all_user_with_label[:1000]
@@ -164,5 +164,5 @@ a = len(np.where(kfold_dataset[4][1]==0)[0])/len(kfold_dataset[4][1])
 
 b = len(np.where(kfold_dataset[4][4]==0)[0])/len(kfold_dataset[4][4])
 
-with open('paper2_data_for_DL_kfold_dataset_RL.pickle', 'wb') as f:
+with open('/paper2_data_for_DL_kfold_dataset_RL.pickle', 'wb') as f:
     pickle.dump([kfold_dataset, X_unlabeled], f)
