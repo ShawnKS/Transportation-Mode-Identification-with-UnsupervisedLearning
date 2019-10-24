@@ -65,31 +65,54 @@ with open(filename, 'rb') as f:
 
 
 def encoder_network(latent_dim, num_filter_ae_cls, input_combined, input_labeled):
+    #input_combined是做无监督,AE这一部分的input，input_labeled是做cls这一部分的
     encoded_combined = input_combined
     encoded_labeled = input_labeled
     layers_shape = []
+    #这里改了以后len(num_filter_ae_cls)只有一组需要计算的
     for i in range(len(num_filter_ae_cls)):
+        #分奇偶层，奇数情况下做maxpooling
         scope_name = 'encoder_set_' + str(i + 1)
+        #第一部分是编码input_combined部分的数据
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE, initializer=initializer):
             encoded_combined = tf.layers.conv2d(inputs=encoded_combined, activation=tf.nn.relu, filters=num_filter_ae_cls[i],
                                                 name='conv_1', kernel_size=kernel_size, strides=strides,
                                                 padding=padding)
+        #第二部分的网络是编码input_labeled部分的数据
         with tf.variable_scope(scope_name, reuse=True, initializer=initializer):
             encoded_labeled = tf.layers.conv2d(inputs=encoded_labeled, activation=tf.nn.relu, filters=num_filter_ae_cls[i],
                                                name='conv_1', kernel_size=kernel_size, strides=strides, padding=padding)
-
+        #奇数情况下做maxpooling
         if i % 2 != 0:
             encoded_combined = tf.layers.max_pooling2d(encoded_combined, pool_size=pool_size,
                                                           strides=pool_size, name='pool')
+        #Tensor("encoder_set_1/conv_1/Relu:0,shape=(?,1,248,32),dtype=float32")
             encoded_labeled = tf.layers.max_pooling2d(encoded_labeled, pool_size=pool_size,
                                                           strides=pool_size, name='pool')
+        #Tensor("encoder_set_1_1/conv_1/Relu:0,shape=(?,1,248,32),dtype=float32")
+            # print(encoded_combined)
+            # print("-----------------")
+            # print("-----------------")
+            # print("-----------------")
+            # print("-----------------")
+            # print(encoded_labeled)
+            # print("-----------------")
+            # print("-----------------")
+            # print("-----------------")
+            # print(encoded_combined.get_shape().as_list())
+        #(encoderd_combined.get_shape().as_list()=[None,1,248,32])
         layers_shape.append(encoded_combined.get_shape().as_list())
-
+        print(layers_shape)
+        print(i)
+    print(layers_shape)
+    print(encoderd_combined.get_shape().as_list())
     layers_shape.append(encoded_combined.get_shape().as_list())
     latent_combined = encoded_combined
     latent_labeled = encoded_labeled
-
-    return latent_combined, latent_labeled, layers_shape
+    print("-----------------------")
+    print("------------------------")
+    print(layers_shape)
+    # return latent_combined, latent_labeled, layers_shape
 
 # # Decoder Network
 
@@ -173,7 +196,7 @@ def classifier_mlp(latent_labeled, num_class, num_filter_cls, num_dense):
 
 
 def semi_supervised(input_labeled, input_combined, true_label, alpha, beta, num_class, latent_dim, num_filter_ae_cls, num_filter_cls, num_dense, input_size):
-
+    #先进行encoder网络进行编码
     latent_combined, latent_labeled, layers_shape = encoder_network(latent_dim=latent_dim, num_filter_ae_cls=num_filter_ae_cls,
                                                                     input_combined=input_combined, input_labeled=input_labeled)
     #得到通过神经网络的Latent
@@ -360,8 +383,10 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     X_unlabeled = X_unlabeled[random_sample]
     #随机选择指定量的无标签数据
     Train_X_Comb = X_unlabeled
-
+#别忘了写计网的前端
     input_size = list(np.shape(Test_X)[1:])
+    #input_size是第一个维度之后的维度
+    #np.shape() 和np.array().shape的功能差不多
     # Various sets of number of filters for ensemble. If choose one set, no ensemble is implemented.
     num_filter_ae_cls_all = [[32, 32], [32, 32, 64], [32, 32, 64, 64], [32, 32, 64, 64, 128],
                              [32, 32, 64, 64, 128, 128], [32, 32, 64, 64, 128, 128], [32, 32, 64, 64, 128, 128]]
@@ -369,6 +394,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     class_posterior = []
 
     # This for loop is only for implementing ensemble
+    # 以下loop实现了ensemble(你懂得)
     for z in range(len(num_filter_ae_cls_all)):
         # Change the following seed to None only for Ensemble.
         tf.reset_default_graph()  # Used for ensemble
@@ -380,6 +406,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
             beta = tf.placeholder(tf.float32, shape=(), name='beta')
 
             num_filter_ae_cls = num_filter_ae_cls_all[z]
+            #此处配置semi_supervised内容，可以新增unsupervised内容来进行无监督启发式训练。
             loss_ae, loss_cls, accuracy_cls, train_op_ae, train_op_cls, classifier_output, dense, train_op, total_loss = semi_supervised(
                 input_labeled=input_labeled, input_combined=input_combined, true_label=true_label, alpha=alpha,
                 beta=beta, num_class=num_class, latent_dim=latent_dim, num_filter_ae_cls=num_filter_ae_cls,
