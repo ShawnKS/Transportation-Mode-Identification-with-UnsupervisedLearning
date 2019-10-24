@@ -176,6 +176,7 @@ def semi_supervised(input_labeled, input_combined, true_label, alpha, beta, num_
 
     latent_combined, latent_labeled, layers_shape = encoder_network(latent_dim=latent_dim, num_filter_ae_cls=num_filter_ae_cls,
                                                                     input_combined=input_combined, input_labeled=input_labeled)
+    #得到通过神经网络的Latent
     decoded_output = decoder_network(latent_combined=latent_combined, input_size=input_size, kernel_size=kernel_size, activation=activation, padding=padding)
     classifier_output, dense = classifier_mlp(latent_labeled, num_class, num_filter_cls=num_filter_cls, num_dense=num_dense)
     #classifier_output = classifier_cnn(latent_labeled, num_filter=num_filter)
