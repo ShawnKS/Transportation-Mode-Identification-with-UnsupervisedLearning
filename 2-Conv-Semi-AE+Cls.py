@@ -260,10 +260,11 @@ def semi_supervised(input_labeled, input_combined, true_label, alpha, beta, num_
         #   scope参数可选，表示的是名称空间（名称域），如果指定，就返回名称域中所有放入‘key’的变量的列表，不指
         #   定则返回所有变量。
     train_op_ae = tf.train.AdamOptimizer().minimize(loss_ae)
+    #ae optimize 训练的operator
     train_op_cls = tf.train.AdamOptimizer().minimize(loss_cls)
+    #classifier optimize 训练的oprtator
     train_op = tf.train.AdamOptimizer().minimize(total_loss)
     # train_op = train_op = tf.layers.optimize_loss(total_loss, optimizer='Adam')
-
     correct_prediction = tf.equal(tf.argmax(true_label, 1), tf.argmax(classifier_output, 1))
     #计算准确数
     accuracy_cls = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
@@ -280,7 +281,13 @@ def semi_supervised(input_labeled, input_combined, true_label, alpha, beta, num_
 
 def get_combined_index(train_x_comb):
     x_combined_index = np.arange(len(train_x_comb))
+    print(len(x_combined_index))
+    #646
+    # sys.exit(0)
     np.random.shuffle(x_combined_index)
+    #将combined_index做shuffle
+    # print(x_combined_index)
+    # sys.exit(0)
     return x_combined_index
 
 
@@ -435,13 +442,22 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     Train_X, Train_Y, Train_Y_ori, Val_X, Val_Y, Val_Y_ori = train_val_split(Train_X, Train_Y_ori)
     #将验证集从训练集中单独抽出来
     Test_X = one_fold[2]
+    # print(len(Test_X))
+    # 110
     Test_Y = one_fold[3]
+    # print(len(Test_Y))
+    # 110
     Test_Y_ori = one_fold[4]
     random_sample = np.random.choice(len(X_unlabeled), size=round(prop * len(X_unlabeled)), replace=False, p=None)
+    # print(len(X_unlabeled))
+    # 4310
     X_unlabeled = X_unlabeled[random_sample]
+    # print(len(X_unlabeled))
+    # 646
+    # sys.exit(0)
     #随机选择指定量的无标签数据
     Train_X_Comb = X_unlabeled
-#别忘了写计网的前端
+    #别忘了写计网的前端
     input_size = list(np.shape(Test_X)[1:])
     #input_size是第一个维度之后的维度
     #np.shape() 和np.array().shape的功能差不多
@@ -470,7 +486,9 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                 beta=beta, num_class=num_class, latent_dim=latent_dim, num_filter_ae_cls=num_filter_ae_cls,
                 num_filter_cls=num_filter_cls, num_dense=num_dense, input_size=input_size)
             sess.run(tf.global_variables_initializer())
+            #初始化
             saver = tf.train.Saver(max_to_keep=20)
+            #模型保存
             # Train_X, Train_Y = ensemble_train_set(orig_Train_X, orig_Train_Y)
             val_accuracy = {-2: 0, -1: 0}
             val_loss = {-2: 10, -1: 10}
@@ -490,7 +508,13 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                 #alfa_val = max(((1.5 - 1) / (epochs_ae_cls)) * k + 1, 1.5)
 
                 x_combined_index = get_combined_index(train_x_comb=Train_X_Comb)
+                # print(x_combined_index)
+                # 646
+                # print(len(x_combined_index))
                 x_labeled_index = get_labeled_index(train_x_comb=Train_X_Comb, train_x=Train_X)
+                # print(x_labeled_index)
+                # 646
+                # print(len(x_labeled_index))
                 for i in range(num_batches):
                     unlab_index_range = x_combined_index[i * batch_size: (i + 1) * batch_size]
                     lab_index_range = x_labeled_index[i * batch_size: (i + 1) * batch_size]
