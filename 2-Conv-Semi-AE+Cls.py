@@ -1,6 +1,8 @@
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
-
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+import warnings
+warnings.filterwarnings("ignore")
 import numpy as np
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 import random
@@ -17,6 +19,8 @@ from sklearn.metrics import recall_score
 from sklearn.metrics import f1_score
 from sklearn.metrics import roc_auc_score
 import keras
+import sys
+
 
 y_true = [2, 0, 2, 2, 0, 1]
 y_pred = [0, 0, 2, 2, 0, 2]
@@ -86,10 +90,8 @@ def encoder_network(latent_dim, num_filter_ae_cls, input_combined, input_labeled
         if i % 2 != 0:
             encoded_combined = tf.layers.max_pooling2d(encoded_combined, pool_size=pool_size,
                                                           strides=pool_size, name='pool')
-        #Tensor("encoder_set_1/conv_1/Relu:0,shape=(?,1,248,32),dtype=float32")
             encoded_labeled = tf.layers.max_pooling2d(encoded_labeled, pool_size=pool_size,
                                                           strides=pool_size, name='pool')
-        #Tensor("encoder_set_1_1/conv_1/Relu:0,shape=(?,1,248,32),dtype=float32")
             # print(encoded_combined)
             # print("-----------------")
             # print("-----------------")
@@ -102,24 +104,38 @@ def encoder_network(latent_dim, num_filter_ae_cls, input_combined, input_labeled
             # print(encoded_combined.get_shape().as_list())
         #(encoderd_combined.get_shape().as_list()=[None,1,248,32])
         layers_shape.append(encoded_combined.get_shape().as_list())
-        print(layers_shape)
-        print(i)
-    print(layers_shape)
-    print(encoderd_combined.get_shape().as_list())
+        # print(layers_shape)
+        #[[None, 1, 248, 32], [None, 1, 124, 32], [None, 1, 124, 64], [None, 1, 62, 64]
+        #[None, 1, 62, 128], [None, 1, 31, 128]]
+        # print(i)
+    # print(layers_shape)
+    # print(encoderd_combined.get_shape().as_list())
     layers_shape.append(encoded_combined.get_shape().as_list())
     latent_combined = encoded_combined
+    #latent_combined为("pool_4/MaxPool:0", shape=(?,1,31,128))
+    #latent_labeled为("pool_5/MaxPool:0",shape(?,1,31,128))
+    print("latent_combined is as below:")
+    print(latent_combined)
     latent_labeled = encoded_labeled
+    print("latent_labeled is as below:")
+    print(latent_labeled)
     print("-----------------------")
     print("------------------------")
     print(layers_shape)
-    # return latent_combined, latent_labeled, layers_shape
+    return latent_combined, latent_labeled, layers_shape
 
 # # Decoder Network
 
 
 def decoder_network(latent_combined, input_size, kernel_size, padding, activation):
     decoded_combined = latent_combined
+    #num_filter_ae_cls ae_classifier的通道(filter数量即通道数量)
     num_filter_ = num_filter_ae_cls[::-1]
+    print(num_filter_ae_cls)
+    #[32,32,64,64,128,128]
+    print(num_filter_ae_cls[::-1])
+    #[::-1] 倒序 [128, 128, 64, 64, 32, 32]
+
     if len(num_filter_) % 2 == 0:
         num_filter_ = sorted(set(num_filter_), reverse=True)
         for i in range(len(num_filter_)):
@@ -166,6 +182,7 @@ def decoder_network(latent_combined, input_size, kernel_size, padding, activatio
 
 
 def classifier_mlp(latent_labeled, num_class, num_filter_cls, num_dense):
+    #clsfier_mlp 为 latent_labeled的网络
     conv_layer = latent_labeled
     for i in range(len(num_filter_cls)):
         scope_name = 'cls_conv_set_' + str(i + 1)
@@ -179,9 +196,21 @@ def classifier_mlp(latent_labeled, num_class, num_filter_cls, num_dense):
         else:
             if i % 2 == 0:
                 conv_layer = tf.layers.max_pooling2d(conv_layer, pool_size=pool_size,strides=pool_size, name='pool')
-
+    print("conv_layer")
+    # print(conv_layer)
+    #Tensor("pool_5/MaxPool:0", shape=(?, 1, 31, 128))
+    #flatten 在保留axis(axis=0)的同时平移输入张量
+    
     dense = tf.layers.flatten(conv_layer)
+
+    #print(dense)
+    #Tensor("flatten/Reshape:0", shape=(?, 3968))
+
     units = int(dense.get_shape().as_list()[-1] / 4)
+    # print(units)
+    # 992 *dense的shape除4
+    sys.exit(0)
+
     for i in range(num_dense):
         scope_name = 'cls_dense_set_' + str(i + 1)
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE, initializer=initializer):
@@ -199,8 +228,9 @@ def semi_supervised(input_labeled, input_combined, true_label, alpha, beta, num_
     #先进行encoder网络进行编码
     latent_combined, latent_labeled, layers_shape = encoder_network(latent_dim=latent_dim, num_filter_ae_cls=num_filter_ae_cls,
                                                                     input_combined=input_combined, input_labeled=input_labeled)
-    #得到通过神经网络的Latent
+    #得到通过神经网络的Latent_combined和latent_labeled以及append出来的layers_shape
     decoded_output = decoder_network(latent_combined=latent_combined, input_size=input_size, kernel_size=kernel_size, activation=activation, padding=padding)
+    #得到decodeNet的输出
     classifier_output, dense = classifier_mlp(latent_labeled, num_class, num_filter_cls=num_filter_cls, num_dense=num_dense)
     #classifier_output = classifier_cnn(latent_labeled, num_filter=num_filter)
 
