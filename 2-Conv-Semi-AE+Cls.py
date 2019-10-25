@@ -209,18 +209,30 @@ def classifier_mlp(latent_labeled, num_class, num_filter_cls, num_dense):
     units = int(dense.get_shape().as_list()[-1] / 4)
     # print(units)
     # 992 *dense的shape除4
-    sys.exit(0)
-
     for i in range(num_dense):
         scope_name = 'cls_dense_set_' + str(i + 1)
         with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE, initializer=initializer):
             dense = tf.layers.dense(dense, units, activation=tf.nn.relu, kernel_initializer=initializer)
         units /= 2
+        print(i)
+        #dense这里是0，不知道有啥用，应该是用来挑mlp参数时候用的，最后得到是0
+    # sys.exit(0)
     dense_last = dense
+    # print("dense before dropout")
+    # print(dense)
+    #Tensor("flatten/Reshape:0", shape=(?, 3968), dtype=float32)
     dense = tf.layers.dropout(dense, 0.5)
+    # print("dense after dropout")
+    # print(dense)
+    #Tensor("dropout/Identity:0", shape=(?, 3968), dtype=float32)
+
     scope_name = 'cls_last_dense_'
     with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE, initializer=initializer):
         classifier_output = tf.layers.dense(dense, num_class, name='FC_4', kernel_initializer=initializer)
+        # print(classifier_output)
+        # Tensor("cls_last_dense_/FC_4/BiasAdd:0", shape=(?, 5), dtype=float32)
+        #output就是分类出来的5个class
+    # sys.exit(0)
     return classifier_output, dense_last
 
 
@@ -233,20 +245,36 @@ def semi_supervised(input_labeled, input_combined, true_label, alpha, beta, num_
     #得到decodeNet的输出
     classifier_output, dense = classifier_mlp(latent_labeled, num_class, num_filter_cls=num_filter_cls, num_dense=num_dense)
     #classifier_output = classifier_cnn(latent_labeled, num_filter=num_filter)
-
+    #通过mlp感知层对latent_labeled层进行一次分类
     loss_ae = tf.reduce_mean(tf.square(input_combined - decoded_output), name='loss_ae') * 100
+    #ae部分的loss_function
     loss_cls = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=true_label, logits=classifier_output),
                               name='loss_cls')
+    #classifier部分的loss_function
     total_loss = alpha*loss_ae + beta*loss_cls
+    #通过调整\alpha和\beta的参数来调整loss function的计算方法
     #total_loss = beta * loss_ae + alpha * loss_cls
     loss_reg = tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, 'EasyNet'))
+    #tf.get_collection(key , scope=None)
+        #   用来获取一个名称是‘key’的集合中的所有元素，返回的是一个列表，列表的顺序是按照变量放入集合中的先后;
+        #   scope参数可选，表示的是名称空间（名称域），如果指定，就返回名称域中所有放入‘key’的变量的列表，不指
+        #   定则返回所有变量。
     train_op_ae = tf.train.AdamOptimizer().minimize(loss_ae)
     train_op_cls = tf.train.AdamOptimizer().minimize(loss_cls)
     train_op = tf.train.AdamOptimizer().minimize(total_loss)
     # train_op = train_op = tf.layers.optimize_loss(total_loss, optimizer='Adam')
 
     correct_prediction = tf.equal(tf.argmax(true_label, 1), tf.argmax(classifier_output, 1))
+    #计算准确数
     accuracy_cls = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+#     #reduce_mean(
+#     input_tensor,
+#     axis=None,
+#     keep_dims=False,
+#     name=None,
+#     reduction_indices=None
+# )
+#   tf.reduce_mean 计算张量的各个维度上的元素的平均值。
     return loss_ae, loss_cls, accuracy_cls, train_op_ae, train_op_cls, classifier_output, dense, train_op, total_loss
 
 
