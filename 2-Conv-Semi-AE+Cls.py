@@ -324,8 +324,11 @@ def loss_acc_evaluation(Test_X, Test_Y, loss_cls, accuracy_cls, input_labeled, t
         loss_cls_, accuracy_cls_ = sess.run([loss_cls, accuracy_cls],
                                             feed_dict={input_labeled: Test_X_batch,
                                                        true_label: Test_Y_batch})
+        #验证集的loss和accuracy
         metrics.append([loss_cls_, accuracy_cls_])
+        print(metrics)
 #     global i
+    sys.exit(0)
     Test_X_batch = Test_X[(i + 1) * batch_size_val:]
     Test_Y_batch = Test_Y[(i + 1) * batch_size_val:]
     if len(Test_X_batch) >= 1:
@@ -516,19 +519,40 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                 # 646
                 # print(len(x_labeled_index))
                 for i in range(num_batches):
+                    # Train_X_comb=646    batch_size=100   num_batches = (Train_X_comb // batch_size = 6)
                     unlab_index_range = x_combined_index[i * batch_size: (i + 1) * batch_size]
+                    # print(unlab_index_range)
+                    # print(len(unlab_index_range))\
+                    # print(np.array(unlab_index_range).shape)
+                    # (100,)
+                    # 100
+                    # x_combined_index就是unlab_index_range
                     lab_index_range = x_labeled_index[i * batch_size: (i + 1) * batch_size]
+                    # label的index range 格式为(100,)
+                    # print(np.array(Train_X_Comb).shape)
+                    # (646,1, 248 ,4)
+                    # print(Train_X_Comb)
+                    # print(len(Train_X_Comb))
                     X_ae = Train_X_Comb[unlab_index_range]
+                    #抽100个unlabeled data的Index出来
+                    # print(X_ae)
+                    # print(len(X_ae))
+                    # sys.exit(0)
                     X_cls = Train_X[lab_index_range]
+                    # 抽100个labeled data 数据(input X)的index出来
                     Y_cls = Train_Y[lab_index_range]
+                    # 100个labeled data的label
                     loss_ae_, loss_cls_, accuracy_cls_, _ = sess.run([loss_ae, loss_cls, accuracy_cls, train_op],
                                                                      feed_dict={alpha: alfa_val, beta: beta_val,
                                                                                 input_combined: X_ae,
                                                                                 input_labeled: X_cls,
                                                                                 true_label: Y_cls})
-                    #print('Epoch Num {}, Batches Num {}, Loss_AE {}, Loss_cls {}, Accuracy_train {}'.format
-                          #(k, i, np.round(loss_ae_, 3), np.round(loss_cls_, 3), np.round(accuracy_cls_, 3)))
-
+                    # print('Epoch Num {}, Batches Num {}, Loss_AE {}, Loss_cls {}, Accuracy_train {}'.format
+                    #       (k, i, np.round(loss_ae_, 3), np.round(loss_cls_, 3), np.round(accuracy_cls_, 3)))
+                    # 训练每个batch
+                # print(i)
+                # 5
+                # sys.exit(0)
                 unlab_index_range = x_combined_index[(i + 1) * batch_size:]
                 lab_index_range = x_labeled_index[(i + 1) * batch_size:]
                 X_ae = Train_X_Comb[unlab_index_range]
@@ -538,15 +562,18 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                                                                  feed_dict={alpha: alfa_val, beta: beta_val,
                                                                             input_combined: X_ae,
                                                                             input_labeled: X_cls, true_label: Y_cls})
-                print('Epoch Num {}, Batches Num {}, Loss_AE {}, Loss_cls {}, Accuracy_train {}'.format
-                      (k, i, np.round(loss_ae_, 3), np.round(loss_cls_, 3), np.round(accuracy_cls_, 3)))
+                # print('Epoch Num {}, Batches Num {}, Loss_AE {}, Loss_cls {}, Accuracy_train {}'.format
+                #       (k, i, np.round(loss_ae_, 3), np.round(loss_cls_, 3), np.round(accuracy_cls_, 3)))
+                # sys.exit(0)
 
                 print('====================================================')
                 loss_val, acc_val = loss_acc_evaluation(Val_X, Val_Y, loss_cls, accuracy_cls, input_labeled, true_label, k, sess)
+                #使用验证集来验证准确性
                 val_loss.update({k: loss_val})
                 val_accuracy.update({k: acc_val})
                 print('====================================================')
                 saver.save(sess, "/home/sxz/data/geolife_Data/Conv-Semi-TF-PS/" + '2/' + str(z) + '/' + str(prop), global_step=k)
+                #保存模型
                 # save_path = "/Conv-Semi/" + str(prop) + '/' + str(k) + ".ckpt"
                 # checkpoint = os.path.join(os.getcwd(), save_path)
                 # saver.save(sess, checkpoint)
