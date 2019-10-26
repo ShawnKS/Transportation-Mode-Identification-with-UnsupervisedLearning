@@ -328,7 +328,6 @@ def loss_acc_evaluation(Test_X, Test_Y, loss_cls, accuracy_cls, input_labeled, t
         metrics.append([loss_cls_, accuracy_cls_])
         print(metrics)
 #     global i
-    sys.exit(0)
     Test_X_batch = Test_X[(i + 1) * batch_size_val:]
     Test_Y_batch = Test_Y[(i + 1) * batch_size_val:]
     if len(Test_X_batch) >= 1:
@@ -337,11 +336,13 @@ def loss_acc_evaluation(Test_X, Test_Y, loss_cls, accuracy_cls, input_labeled, t
                                                    true_label: Test_Y_batch})
         metrics.append([loss_cls_, accuracy_cls_])
     print(metrics)
+    # sys.exit(0)
     mean_ = np.mean(np.array(metrics), axis=0)
     print("___________________________________")
     print(mean_)
     #print('Epoch Num {}, Loss_cls_Val {}, Accuracy_Val {}'.format(k, mean_[0], mean_[1]))
     return mean_[0], mean_[1]
+    #把三次的loss和accuracy做一个平均传回去。
 
 
 def prediction_prob(Test_X, classifier_output, input_labeled, sess):
@@ -495,6 +496,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
             # Train_X, Train_Y = ensemble_train_set(orig_Train_X, orig_Train_Y)
             val_accuracy = {-2: 0, -1: 0}
             val_loss = {-2: 10, -1: 10}
+            # 对val_loss进行初始化
             num_batches = len(Train_X_Comb) // batch_size
             # alfa_val1 = [0.0, 0.0, 1.0, 1.0, 1.0]
             # beta_val1 = [1.0, 1.0, 0.1, 0.1, 0.1]
@@ -568,9 +570,18 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
 
                 print('====================================================')
                 loss_val, acc_val = loss_acc_evaluation(Val_X, Val_Y, loss_cls, accuracy_cls, input_labeled, true_label, k, sess)
-                #使用验证集来验证准确性
+                #使用验证集来验证准确性 取val-batch里几次的平均值作为返回的loss和accuracy
+                #loss_val = 1.4179071
+                #acc_val = 0.7
+                print(val_loss)
+                #{ -2:10, -1:10}
                 val_loss.update({k: loss_val})
+                print(val_loss)
+                print({k: loss_val})
+                #{ -2:10 , -1:10, 0: 1.2811708}
+                sys.exit(0)
                 val_accuracy.update({k: acc_val})
+                #把刚刚算得的accuracy按照 {k:{value}}的形式加到数组上去(update上去)
                 print('====================================================')
                 saver.save(sess, "/home/sxz/data/geolife_Data/Conv-Semi-TF-PS/" + '2/' + str(z) + '/' + str(prop), global_step=k)
                 #保存模型
