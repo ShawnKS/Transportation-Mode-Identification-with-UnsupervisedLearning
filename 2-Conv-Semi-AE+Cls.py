@@ -549,8 +549,12 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                     # print(len(X_ae))
                     # sys.exit(0)
                     X_cls = Train_X[lab_index_range]
+                    print(X_cls)
+                    print(np.array(X_cls).shape)
                     # 抽100个labeled data 数据(input X)的index出来
                     Y_cls = Train_Y[lab_index_range]
+                    print(Y_cls)
+                    print(np.array(Y_cls).shape)
                     # 100个labeled data的label
                     loss_ae_, loss_cls_, accuracy_cls_, _ = sess.run([loss_ae, loss_cls, accuracy_cls, train_op],
                                                                      feed_dict={alpha: alfa_val, beta: beta_val,

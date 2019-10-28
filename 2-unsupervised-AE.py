@@ -18,9 +18,10 @@ from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import f1_score
 from sklearn.metrics import roc_auc_score
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
 import keras
 import sys
-
 
 y_true = [2, 0, 2, 2, 0, 1]
 y_pred = [0, 0, 2, 2, 0, 2]
@@ -364,7 +365,9 @@ def encode_AE_data(Test_X, latent, input_labeled, sess):
     encode_result = []
     for i in range(len(Test_X) // batch_size):
         Test_X_batch = Test_X[i * batch_size:(i + 1) * batch_size]
+        print(np.array(Test_X_batch).shape)
         encode_result.append(sess.run(tf.nn.softmax(latent), feed_dict={input_labeled: Test_X_batch}))
+        print(np.array(encode_result).shape)
     Test_X_batch = Test_X[(i + 1) * batch_size:]
     encode_result.append(sess.run(tf.nn.softmax(latent), feed_dict={input_labeled: Test_X_batch}))
     encode_result = np.vstack(tuple(encode_result))
@@ -615,7 +618,32 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
         # f1_weight = f1_score(Test_Y_ori, y_pred, average='weighted')
         # print('Semi-AE+Cls Test Accuracy of the Ensemble: ', test_accuracy)
         # print('Confusion Matrix: ', confusion_matrix(Test_Y_ori, y_pred))
-        print(unsupervised_encoded)
+        print(unsupervised_encoded[0])
+        print(np.array(unsupervised_encoded)[0].shape)
+        PCA_codearray = unsupervised_encoded[0].reshape(110,3968)
+        print(PCA_codearray)
+        pca_ = PCA(n_components=2)
+        pca_encodeAE = pca_.fit_transform(PCA_codearray)
+        print(pca_encodeAE)
+        print(pca_encodeAE.shape)
+        x = [i[0] for i in pca_encodeAE]
+        y = [i[1] for i in pca_encodeAE]
+        print(x)
+        print(y) 
+        plt.figure(figsize=[12,12])
+        # plt.plot(x, y,'v')
+        # plt.show()
+        # plt.savefig('test2.png')
+        km5 = KMeans(n_clusters=5, init='random',max_iter=300,n_init=10,random_state=0)
+        encode_means = km5.fit_predict(pca_encodeAE)
+        print(np.array(encode_means).shape)
+        plt.plot(pca_encodeAE[encode_means==0,0],pca_encodeAE[encode_means==0,1],'o',color='black')
+        plt.plot(pca_encodeAE[encode_means==1,0],pca_encodeAE[encode_means==1,1],'o',color='red')
+        plt.plot(pca_encodeAE[encode_means==2,0],pca_encodeAE[encode_means==2,1],'o',color='blue')
+        plt.plot(pca_encodeAE[encode_means==3,0],pca_encodeAE[encode_means==3,1],'o',color='purple')
+        plt.plot(pca_encodeAE[encode_means==4,0],pca_encodeAE[encode_means==4,1],'o',color='green')
+        plt.savefig('test2.png')
+
     return unsupervised_encoded
 
 def training_all_folds(label_proportions, num_filter):
