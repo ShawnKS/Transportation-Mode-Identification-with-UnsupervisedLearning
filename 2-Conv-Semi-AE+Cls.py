@@ -235,6 +235,23 @@ def classifier_mlp(latent_labeled, num_class, num_filter_cls, num_dense):
     # sys.exit(0)
     return classifier_output, dense_last
 
+def unsupervised(input_labeled, true_label, num_class , latent_dim, num_filter_ae_cls , num_dense , input_size):
+    latent , layers_shape = encoder_network(latent_dim = latent_dim, num_filter_ae_cls = num_filter_ae_cls,
+                                            input_labeled = input_labeled)
+    decoded_output = decoder_network(latent = latent, input_size = input_size, kernel_size= kernel_size, activation=activation, padding=padding):
+
+    classifier_output, dense = classifier_mlp(latent = latent, num_class , num_filter_cls = num_filter_cls, num_dense = num_dense)
+    loss_AE_label =tf.reduce_mean(tf.square(input_labeled - decoded_output))
+    tran_op_ae_label = tf.train.AdamOptimizer().minimize(loss_AE_label)
+    return loss_AE_label, train_op_ae_label, dense
+    
+
+def PCA_clustering():
+    
+
+
+
+
 
 def semi_supervised(input_labeled, input_combined, true_label, alpha, beta, num_class, latent_dim, num_filter_ae_cls, num_filter_cls, num_dense, input_size):
     #先进行encoder网络进行编码
@@ -383,17 +400,6 @@ def train_val_split(Train_X, Train_Y_ori):
 
         # print("___________")
         # print("label_index")
-        # print("label_index")
-        # print("label_index")
-        # print("label_index")
-        # print("label_index")
-        # print(label_index)
-        # print(label_index)
-        # print(label_index)
-        # print(label_index)
-        # print(label_index)
-        # print(label_index)
-        # print(label_index)
         # print(label_index)
         # print(label_index)
         # print(label_index[:round(0.1*len(label_index))])
@@ -437,7 +443,6 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     #(220,1,248,4)matrix from (441,1,248,4) if we use the statement A = A[random_sample]
 
     # print(np.array(Train_X1).shape)
-    # print(np.array(Train_X).shape)
     # print(np.array(random_sample).shape)
 
     Train_Y_ori = Train_Y_ori[random_sample]
@@ -536,6 +541,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                     # print(Train_X_Comb)
                     # print(len(Train_X_Comb))
                     X_ae = Train_X_Comb[unlab_index_range]
+                    # (100,1, 248 , 4)
                     #抽100个unlabeled data的Index出来
                     # print(X_ae)
                     # print(len(X_ae))
@@ -579,7 +585,6 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                 print(val_loss)
                 print({k: loss_val})
                 #{ -2:10 , -1:10, 0: 1.2811708}
-                sys.exit(0)
                 val_accuracy.update({k: acc_val})
                 #把刚刚算得的accuracy按照 {k:{value}}的形式加到数组上去(update上去)
                 print('====================================================')
@@ -590,8 +595,9 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                 # saver.save(sess, checkpoint)
                 # if alfa_val == 1:
                 # beta_val += 0.05
-
+                # 找到Max_accuracy
                 if all([change_to_ae, val_accuracy[k] < val_accuracy[k - 1], val_accuracy[k] < val_accuracy[k - 2]]):
+                    # python中all()函数用于判断给定的可迭代参数iterable中的所有元素是否都为TRUE,如果是返回True,否则返回False
                     # save_path = "/Conv-Semi/" + str(prop) + '/' + str(k-1) + ".ckpt"
                     # checkpoint = os.path.join(os.getcwd(), save_path)
                     max_acc = max(val_accuracy.items(), key=lambda k: k[1])[0]
@@ -628,7 +634,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                     #val_loss.update({k: val_loss[max_acc] + 0.001})  ##
                 if change_times == 2: ##
                     break
-
+                # 以上代码是为了找到max_accuracy
             print("Ensemble {}: Val_Accu ae+cls Over Epochs {}: ".format(z, val_accuracy))
             print("Ensemble {}: Val_loss ae+cls Over Epochs {}: ".format(z, val_loss))
             class_posterior.append(prediction_prob(Test_X, classifier_output, input_labeled, sess))
@@ -654,7 +660,9 @@ def training_all_folds(label_proportions, num_filter):
         for i in range(len(kfold_dataset)):
             test_accuracy, f1_macro, f1_weight = training(kfold_dataset[i], X_unlabeled=X_unlabeled, seed=7, prop=prop, num_filter_ae_cls_all=num_filter)
             test_accuracy_fold[index].append(test_accuracy)
+            # 得到每个fold的accuracy
             test_metrics_fold[index].append([f1_macro, f1_weight])
+            # 得到每个fold的different f1 score
         accuracy_all = np.array(test_accuracy_fold[index])
         mean = np.mean(accuracy_all)
         std = np.std(accuracy_all)
