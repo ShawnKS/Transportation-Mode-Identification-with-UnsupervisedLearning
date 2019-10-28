@@ -246,7 +246,7 @@ def unsupervised(input_labeled, true_label, num_class , latent_dim, num_filter_a
     return loss_AE_label, train_op_ae_label, dense
     
 
-# def PCA_clustering():
+def PCA_clustering():
 
 
 
