@@ -235,15 +235,15 @@ def classifier_mlp(latent_labeled, num_class, num_filter_cls, num_dense):
     # sys.exit(0)
     return classifier_output, dense_last
 
-def unsupervised(input_labeled, true_label, num_class , latent_dim, num_filter_ae_cls , num_dense , input_size):
-    latent , layers_shape = encoder_network(latent_dim = latent_dim, num_filter_ae_cls = num_filter_ae_cls,
-                                            input_labeled = input_labeled)
-    decoded_output = decoder_network(latent = latent, input_size = input_size, kernel_size= kernel_size, activation=activation, padding=padding):
+# def unsupervised(input_labeled, true_label, num_class , latent_dim, num_filter_ae_cls , num_dense , input_size):
+#     latent , layers_shape = encoder_network(latent_dim = latent_dim, num_filter_ae_cls = num_filter_ae_cls,
+#                                             input_labeled = input_labeled)
+#     decoded_output = decoder_network(latent = latent, input_size = input_size, kernel_size= kernel_size, activation=activation, padding=padding)
 
-    # classifier_output, dense = classifier_mlp(latent = latent, num_class , num_filter_cls = num_filter_cls, num_dense = num_dense)
-    loss_AE_label =tf.reduce_mean(tf.square(input_labeled - decoded_output))
-    tran_op_ae_label = tf.train.AdamOptimizer().minimize(loss_AE_label)
-    return loss_AE_label, train_op_ae_label, dense
+#     # classifier_output, dense = classifier_mlp(latent = latent, num_class , num_filter_cls = num_filter_cls, num_dense = num_dense)
+#     loss_AE_label =tf.reduce_mean(tf.square(input_labeled - decoded_output))
+#     tran_op_ae_label = tf.train.AdamOptimizer().minimize(loss_AE_label)
+#     return loss_AE_label, train_op_ae_label, dense
     
 
 # def PCA_clustering():
@@ -364,6 +364,8 @@ def loss_acc_evaluation(Test_X, Test_Y, loss_cls, accuracy_cls, input_labeled, t
 
 def prediction_prob(Test_X, classifier_output, input_labeled, sess):
     prediction = []
+    print(classifier_output)
+    sys.exit(0)
     for i in range(len(Test_X) // batch_size):
         Test_X_batch = Test_X[i * batch_size:(i + 1) * batch_size]
         prediction.append(sess.run(tf.nn.softmax(classifier_output), feed_dict={input_labeled: Test_X_batch}))

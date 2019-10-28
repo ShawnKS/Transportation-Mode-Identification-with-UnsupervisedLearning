@@ -68,9 +68,9 @@ with open(filename, 'rb') as f:
 # Encoder Network
 
 
-def encoder_network(latent_dim, num_filter_ae_cls, input_combined, input_labeled):
+def encoder_network(latent_dim, num_filter_ae_cls, input_labeled):
     #input_combined是做无监督,AE这一部分的input，input_labeled是做cls这一部分的
-    encoded_combined = input_combined
+    # encoded_combined = input_combined
     encoded_labeled = input_labeled
     layers_shape = []
     #这里改了以后len(num_filter_ae_cls)只有一组需要计算的
@@ -78,18 +78,18 @@ def encoder_network(latent_dim, num_filter_ae_cls, input_combined, input_labeled
         #分奇偶层，奇数情况下做maxpooling
         scope_name = 'encoder_set_' + str(i + 1)
         #第一部分是编码input_combined部分的数据
-        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE, initializer=initializer):
-            encoded_combined = tf.layers.conv2d(inputs=encoded_combined, activation=tf.nn.relu, filters=num_filter_ae_cls[i],
-                                                name='conv_1', kernel_size=kernel_size, strides=strides,
-                                                padding=padding)
+        # with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE, initializer=initializer):
+        #     encoded_combined = tf.layers.conv2d(inputs=encoded_combined, activation=tf.nn.relu, filters=num_filter_ae_cls[i],
+        #                                         name='conv_1', kernel_size=kernel_size, strides=strides,
+        #                                         padding=padding)
         #第二部分的网络是编码input_labeled部分的数据
-        with tf.variable_scope(scope_name, reuse=True, initializer=initializer):
+        with tf.variable_scope(scope_name, reuse=tf.AUTO_REUSE, initializer=initializer):
             encoded_labeled = tf.layers.conv2d(inputs=encoded_labeled, activation=tf.nn.relu, filters=num_filter_ae_cls[i],
                                                name='conv_1', kernel_size=kernel_size, strides=strides, padding=padding)
         #奇数情况下做maxpooling
         if i % 2 != 0:
-            encoded_combined = tf.layers.max_pooling2d(encoded_combined, pool_size=pool_size,
-                                                          strides=pool_size, name='pool')
+            # encoded_combined = tf.layers.max_pooling2d(encoded_combined, pool_size=pool_size,
+            #                                               strides=pool_size, name='pool')
             encoded_labeled = tf.layers.max_pooling2d(encoded_labeled, pool_size=pool_size,
                                                           strides=pool_size, name='pool')
             # print(encoded_combined)
@@ -103,32 +103,32 @@ def encoder_network(latent_dim, num_filter_ae_cls, input_combined, input_labeled
             # print("-----------------")
             # print(encoded_combined.get_shape().as_list())
         #(encoderd_combined.get_shape().as_list()=[None,1,248,32])
-        layers_shape.append(encoded_combined.get_shape().as_list())
+        # layers_shape.append(encoded_combined.get_shape().as_list())
         # print(layers_shape)
         #[[None, 1, 248, 32], [None, 1, 124, 32], [None, 1, 124, 64], [None, 1, 62, 64]
         #[None, 1, 62, 128], [None, 1, 31, 128]]
         # print(i)
     # print(layers_shape)
     # print(encoderd_combined.get_shape().as_list())
-    layers_shape.append(encoded_combined.get_shape().as_list())
-    latent_combined = encoded_combined
+    # layers_shape.append(encoded_combined.get_shape().as_list())
+    # latent_combined = encoded_combined
     #latent_combined为("pool_4/MaxPool:0", shape=(?,1,31,128))
     #latent_labeled为("pool_5/MaxPool:0",shape(?,1,31,128))
-    print("latent_combined is as below:")
-    print(latent_combined)
+    # print("latent_combined is as below:")
+    # print(latent_combined)
     latent_labeled = encoded_labeled
     print("latent_labeled is as below:")
     print(latent_labeled)
     print("-----------------------")
     print("------------------------")
     print(layers_shape)
-    return latent_combined, latent_labeled, layers_shape
+    return latent_labeled, layers_shape
 
 # # Decoder Network
 
 
-def decoder_network(latent_combined, input_size, kernel_size, padding, activation):
-    decoded_combined = latent_combined
+def decoder_network(latent, input_size, kernel_size, padding, activation):
+    decoded_combined = latent
     #num_filter_ae_cls ae_classifier的通道(filter数量即通道数量)
     num_filter_ = num_filter_ae_cls[::-1]
     print(num_filter_ae_cls)
@@ -235,18 +235,18 @@ def classifier_mlp(latent_labeled, num_class, num_filter_cls, num_dense):
     # sys.exit(0)
     return classifier_output, dense_last
 
-def unsupervised(input_labeled, true_label, num_class , latent_dim, num_filter_ae_cls , num_dense , input_size):
+def unsupervised(input_labeled, num_class , latent_dim, num_filter_ae_cls , num_dense , input_size):
     latent , layers_shape = encoder_network(latent_dim = latent_dim, num_filter_ae_cls = num_filter_ae_cls,
                                             input_labeled = input_labeled)
-    decoded_output = decoder_network(latent = latent, input_size = input_size, kernel_size= kernel_size, activation=activation, padding=padding):
+    decoded_output = decoder_network(latent = latent, input_size = input_size, kernel_size= kernel_size, activation=activation, padding=padding)
 
     # classifier_output, dense = classifier_mlp(latent = latent, num_class , num_filter_cls = num_filter_cls, num_dense = num_dense)
     loss_AE_label =tf.reduce_mean(tf.square(input_labeled - decoded_output))
-    tran_op_ae_label = tf.train.AdamOptimizer().minimize(loss_AE_label)
-    return loss_AE_label, train_op_ae_label, dense
+    train_op_ae_label = tf.train.AdamOptimizer().minimize(loss_AE_label)
+    return loss_AE_label, latent, train_op_ae_label
     
 
-def PCA_clustering():
+# def PCA_clustering():
 
 
 
@@ -258,7 +258,7 @@ def semi_supervised(input_labeled, input_combined, true_label, alpha, beta, num_
     latent_combined, latent_labeled, layers_shape = encoder_network(latent_dim=latent_dim, num_filter_ae_cls=num_filter_ae_cls,
                                                                     input_combined=input_combined, input_labeled=input_labeled)
     #得到通过神经网络的Latent_combined和latent_labeled以及append出来的layers_shape
-    decoded_output = decoder_network(latent_combined=latent_combined, input_size=input_size, kernel_size=kernel_size, activation=activation, padding=padding)
+    decoded_output = decoder_network(latent_combined = latent_combined, input_size=input_size, kernel_size=kernel_size, activation=activation, padding=padding)
     #得到decodeNet的输出
     classifier_output, dense = classifier_mlp(latent_labeled, num_class, num_filter_cls=num_filter_cls, num_dense=num_dense)
     #classifier_output = classifier_cnn(latent_labeled, num_filter=num_filter)
@@ -323,7 +323,7 @@ def ensemble_train_set(Train_X, Train_Y):
     return Train_X[index], Train_Y[index]
 
 
-def loss_acc_evaluation(Test_X, Test_Y, loss_cls, accuracy_cls, input_labeled, true_label, k, sess):
+def loss_acc_evaluation(Test_X, Test_Y, loss_AE_label, input_labeled, k, sess):
     metrics = []
     i = 0
     print(Test_X)
@@ -338,28 +338,38 @@ def loss_acc_evaluation(Test_X, Test_Y, loss_cls, accuracy_cls, input_labeled, t
     for i in range(len(Test_X) // batch_size_val):
         Test_X_batch = Test_X[i * batch_size_val:(i + 1) * batch_size_val]
         Test_Y_batch = Test_Y[i * batch_size_val:(i + 1) * batch_size_val]
-        loss_cls_, accuracy_cls_ = sess.run([loss_cls, accuracy_cls],
-                                            feed_dict={input_labeled: Test_X_batch,
-                                                       true_label: Test_Y_batch})
+        loss_AE_label_ = sess.run([loss_AE_label],
+                                            feed_dict={input_labeled: Test_X_batch})
         #验证集的loss和accuracy
-        metrics.append([loss_cls_, accuracy_cls_])
+        metrics.append([loss_AE_label_])
         print(metrics)
 #     global i
     Test_X_batch = Test_X[(i + 1) * batch_size_val:]
     Test_Y_batch = Test_Y[(i + 1) * batch_size_val:]
     if len(Test_X_batch) >= 1:
-        loss_cls_, accuracy_cls_ = sess.run([loss_cls, accuracy_cls],
-                                        feed_dict={input_labeled: Test_X_batch,
-                                                   true_label: Test_Y_batch})
-        metrics.append([loss_cls_, accuracy_cls_])
+        loss_AE_label_ = sess.run([loss_AE_label],
+                                            feed_dict={input_labeled: Test_X_batch})
+        #验证集的loss和accuracy
+        metrics.append([loss_AE_label_])
     print(metrics)
     # sys.exit(0)
     mean_ = np.mean(np.array(metrics), axis=0)
     print("___________________________________")
     print(mean_)
     #print('Epoch Num {}, Loss_cls_Val {}, Accuracy_Val {}'.format(k, mean_[0], mean_[1]))
-    return mean_[0], mean_[1]
+    return mean_[0]
     #把三次的loss和accuracy做一个平均传回去。
+
+def encode_AE_data(Test_X, latent, input_labeled, sess):
+    encode_result = []
+    for i in range(len(Test_X) // batch_size):
+        Test_X_batch = Test_X[i * batch_size:(i + 1) * batch_size]
+        encode_result.append(sess.run(tf.nn.softmax(latent), feed_dict={input_labeled: Test_X_batch}))
+    Test_X_batch = Test_X[(i + 1) * batch_size:]
+    encode_result.append(sess.run(tf.nn.softmax(latent), feed_dict={input_labeled: Test_X_batch}))
+    encode_result = np.vstack(tuple(encode_result))
+    return encode_result
+
 
 
 def prediction_prob(Test_X, classifier_output, input_labeled, sess):
@@ -474,7 +484,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     num_filter_ae_cls_all = [[32, 32], [32, 32, 64], [32, 32, 64, 64], [32, 32, 64, 64, 128],
                              [32, 32, 64, 64, 128, 128], [32, 32, 64, 64, 128, 128], [32, 32, 64, 64, 128, 128]]
     num_filter_ae_cls_all = [[32, 32, 64, 64, 128, 128]]
-    class_posterior = []
+    unsupervised_encoded = []
 
     # This for loop is only for implementing ensemble
     # 以下loop实现了ensemble(你懂得)
@@ -483,17 +493,19 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
         tf.reset_default_graph()  # Used for ensemble
         with tf.Session() as sess:
             input_labeled = tf.placeholder(dtype=tf.float32, shape=[None] + input_size, name='input_labeled')
-            input_combined = tf.placeholder(dtype=tf.float32, shape=[None] + input_size, name='input_combined')
-            true_label = tf.placeholder(tf.float32, shape=[None, num_class], name='true_label')
-            alpha = tf.placeholder(tf.float32, shape=(), name='alpha')
-            beta = tf.placeholder(tf.float32, shape=(), name='beta')
 
             num_filter_ae_cls = num_filter_ae_cls_all[z]
             #此处配置semi_supervised内容，可以新增unsupervised内容来进行无监督启发式训练。
-            loss_ae, loss_cls, accuracy_cls, train_op_ae, train_op_cls, classifier_output, dense, train_op, total_loss = semi_supervised(
-                input_labeled=input_labeled, input_combined=input_combined, true_label=true_label, alpha=alpha,
-                beta=beta, num_class=num_class, latent_dim=latent_dim, num_filter_ae_cls=num_filter_ae_cls,
-                num_filter_cls=num_filter_cls, num_dense=num_dense, input_size=input_size)
+            # loss_ae, loss_cls, accuracy_cls, train_op_ae, train_op_cls, classifier_output, dense, train_op, total_loss = semi_supervised(
+            #     input_labeled=input_labeled, input_combined=input_combined, true_label=true_label, alpha=alpha,
+            #     beta=beta, num_class=num_class, latent_dim=latent_dim, num_filter_ae_cls=num_filter_ae_cls,
+            #     num_filter_cls=num_filter_cls, num_dense=num_dense, input_size=input_size)
+            # 配置AE模型
+            loss_AE_label, latent , train_op_ae_label  = unsupervised(
+                input_labeled = input_labeled, num_class = num_class, latent_dim = latent_dim, num_filter_ae_cls = num_filter_ae_cls,
+                num_dense = num_dense, input_size = input_size
+            )
+            
             sess.run(tf.global_variables_initializer())
             #初始化
             saver = tf.train.Saver(max_to_keep=20)
@@ -550,11 +562,8 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                     # 抽100个labeled data 数据(input X)的index出来
                     Y_cls = Train_Y[lab_index_range]
                     # 100个labeled data的label
-                    loss_ae_, loss_cls_, accuracy_cls_, _ = sess.run([loss_ae, loss_cls, accuracy_cls, train_op],
-                                                                     feed_dict={alpha: alfa_val, beta: beta_val,
-                                                                                input_combined: X_ae,
-                                                                                input_labeled: X_cls,
-                                                                                true_label: Y_cls})
+                    loss_ae_, _ = sess.run([loss_AE_label, train_op_ae_label],
+                                                                     feed_dict={input_labeled: X_cls,})
                     # print('Epoch Num {}, Batches Num {}, Loss_AE {}, Loss_cls {}, Accuracy_train {}'.format
                     #       (k, i, np.round(loss_ae_, 3), np.round(loss_cls_, 3), np.round(accuracy_cls_, 3)))
                     # 训练每个batch
@@ -566,16 +575,15 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                 X_ae = Train_X_Comb[unlab_index_range]
                 X_cls = Train_X[lab_index_range]
                 Y_cls = Train_Y[lab_index_range]
-                loss_ae_, loss_cls_, accuracy_cls_, _ = sess.run([loss_ae, loss_cls, accuracy_cls, train_op],
-                                                                 feed_dict={alpha: alfa_val, beta: beta_val,
-                                                                            input_combined: X_ae,
-                                                                            input_labeled: X_cls, true_label: Y_cls})
+                loss_ae_, _ = sess.run([loss_AE_label, train_op_ae_label],
+                                                                     feed_dict={input_labeled: X_cls,})
                 # print('Epoch Num {}, Batches Num {}, Loss_AE {}, Loss_cls {}, Accuracy_train {}'.format
                 #       (k, i, np.round(loss_ae_, 3), np.round(loss_cls_, 3), np.round(accuracy_cls_, 3)))
                 # sys.exit(0)
 
                 print('====================================================')
-                loss_val, acc_val = loss_acc_evaluation(Val_X, Val_Y, loss_cls, accuracy_cls, input_labeled, true_label, k, sess)
+                # def loss_acc_evaluation(Test_X, Test_Y, loss_AE_label, input_labeled, k, sess):
+                loss_val = loss_acc_evaluation(Val_X, Val_Y, loss_AE_label, input_labeled, k, sess)
                 #使用验证集来验证准确性 取val-batch里几次的平均值作为返回的loss和accuracy
                 #loss_val = 1.4179071
                 #acc_val = 0.7
@@ -585,7 +593,6 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                 print(val_loss)
                 print({k: loss_val})
                 #{ -2:10 , -1:10, 0: 1.2811708}
-                val_accuracy.update({k: acc_val})
                 #把刚刚算得的accuracy按照 {k:{value}}的形式加到数组上去(update上去)
                 print('====================================================')
                 saver.save(sess, "/home/sxz/data/geolife_Data/Conv-Semi-TF-PS/" + '2/' + str(z) + '/' + str(prop), global_step=k)
@@ -596,60 +603,20 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                 # if alfa_val == 1:
                 # beta_val += 0.05
                 # 找到Max_accuracy
-                if all([change_to_ae, val_accuracy[k] < val_accuracy[k - 1], val_accuracy[k] < val_accuracy[k - 2]]):
-                    # python中all()函数用于判断给定的可迭代参数iterable中的所有元素是否都为TRUE,如果是返回True,否则返回False
-                    # save_path = "/Conv-Semi/" + str(prop) + '/' + str(k-1) + ".ckpt"
-                    # checkpoint = os.path.join(os.getcwd(), save_path)
-                    max_acc = max(val_accuracy.items(), key=lambda k: k[1])[0]
-                    save_path = "/home/sxz/data/geolife_Data/Conv-Semi-TF-PS/" + '2/' + str(z) + '/' + str(prop) + '-' + str(max_acc)
-                    saver.restore(sess, save_path)
-                    alfa_val = 1.0
-                    beta_val = 0.1
-                    num_epoch_cls_only = k
-                    change_times += 1
-                    change_to_ae = 1
-                    key = 'change_' + str(k)
-                    val_accuracy.update({key: val_accuracy[k]})
-                    val_loss.update({key: val_loss[k]})
-                    #val_accuracy.update({k: val_accuracy[max_acc] - 0.001}) ##
-                    #val_loss.update({k: val_loss[max_acc] + 0.001})  ##
-
-                elif all([not change_to_ae, val_accuracy[k] < val_accuracy[k - 1],
-                          val_accuracy[k] < val_accuracy[k - 2]]):
-                    # save_path = "/Conv-Semi/" + str(prop) + '/' + str(k - 1) + ".ckpt"
-                    # #checkpoint = os.path.join(os.getcwd(), save_path)
-                    max_acc = max(val_accuracy.items(), key=lambda k: k[1])[0]
-                    # saver.restore(sess, "/Conv-Semi-TF-PS/" + str(prop) + '/' + str(max_acc) + ".ckpt")
-                    save_path = "/home/sxz/data/geolife_Data/Conv-Semi-TF-PS/" + '2/' + str(z) + '/' + str(prop) + '-' + str(max_acc)
-                    saver.restore(sess, save_path)
-                    num_epoch_ae_cls = k - num_epoch_cls_only - 1
-                    alfa_val = 1.5
-                    beta_val = 0.2
-                    change_times += 1  ##
-                    change_to_ae = 1
-                    key = 'change_' + str(k)
-                    val_accuracy.update({key: val_accuracy[k]})
-                    val_loss.update({key: val_loss[k]})
-                    #val_accuracy.update({k: val_accuracy[max_acc] - 0.001})  ##
-                    #val_loss.update({k: val_loss[max_acc] + 0.001})  ##
-                if change_times == 2: ##
-                    break
-                # 以上代码是为了找到max_accuracy
-            print("Ensemble {}: Val_Accu ae+cls Over Epochs {}: ".format(z, val_accuracy))
             print("Ensemble {}: Val_loss ae+cls Over Epochs {}: ".format(z, val_loss))
-            class_posterior.append(prediction_prob(Test_X, classifier_output, input_labeled, sess))
+            unsupervised_encoded.append(encode_AE_data(Test_X, latent, input_labeled, sess))
 
-        ave_class_posterior = sum(class_posterior) / len(class_posterior)
-        y_pred = np.argmax(ave_class_posterior, axis=1)
-        test_accuracy = accuracy_score(Test_Y_ori, y_pred)
-        #precision = precision_score(Test_Y_ori, y_pred, average='weighted')
-        #recall = recall_score(Test_Y_ori, y_pred, average='weighted')
-        f1_macro = f1_score(Test_Y_ori, y_pred, average='macro')
-        f1_weight = f1_score(Test_Y_ori, y_pred, average='weighted')
-        print('Semi-AE+Cls Test Accuracy of the Ensemble: ', test_accuracy)
-        print('Confusion Matrix: ', confusion_matrix(Test_Y_ori, y_pred))
-
-    return test_accuracy, f1_macro, f1_weight
+        # ave_class_posterior = sum(class_posterior) / len(class_posterior)
+        # y_pred = np.argmax(ave_class_posterior, axis=1)
+        # test_accuracy = accuracy_score(Test_Y_ori, y_pred)
+        # #precision = precision_score(Test_Y_ori, y_pred, average='weighted')
+        # #recall = recall_score(Test_Y_ori, y_pred, average='weighted')
+        # f1_macro = f1_score(Test_Y_ori, y_pred, average='macro')
+        # f1_weight = f1_score(Test_Y_ori, y_pred, average='weighted')
+        # print('Semi-AE+Cls Test Accuracy of the Ensemble: ', test_accuracy)
+        # print('Confusion Matrix: ', confusion_matrix(Test_Y_ori, y_pred))
+        print(unsupervised_encoded)
+    return unsupervised_encoded
 
 def training_all_folds(label_proportions, num_filter):
     test_accuracy_fold = [[] for _ in range(len(label_proportions))]
@@ -678,7 +645,7 @@ def training_all_folds(label_proportions, num_filter):
         print('\n')
     return test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics
 
-test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(
+unsupervised_encoded = training_all_folds(
     label_proportions=[0.15, 0.35], num_filter=[32, 32, 64, 64])
 
 
