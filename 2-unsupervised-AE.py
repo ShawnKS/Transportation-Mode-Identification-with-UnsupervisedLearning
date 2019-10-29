@@ -421,7 +421,6 @@ def train_val_split(Train_X, Train_Y_ori):
     print(val_index)
     val_index = np.hstack(tuple([label for label in val_index]))
     print(val_index)
-    # 将不同的array压成一个array,这里是选了百分之十作为验证集
     Val_X = Train_X[val_index]
     Val_Y_ori = Train_Y_ori[val_index]
     print(np.array(Val_Y_ori).shape)
@@ -470,6 +469,9 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     # print(len(Test_Y))
     # 110
     Test_Y_ori = one_fold[4]
+    # print(len(Test_Y_ori))
+    # print(Test_Y_ori)
+    # sys.exit(0)
     random_sample = np.random.choice(len(X_unlabeled), size=round(prop * len(X_unlabeled)), replace=False, p=None)
     # print(len(X_unlabeled))
     # 4310
@@ -624,7 +626,13 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
         print(PCA_codearray)
         pca_ = PCA(n_components=2)
         pca_encodeAE = pca_.fit_transform(PCA_codearray)
+        pca_encodeAE.tofile("encodeAE.bin")
         print(pca_encodeAE)
+        print(pca_encodeAE.dtype)
+        Test_Y_ori.tofile("label.bin")
+        print(Test_Y_ori)
+        print(Test_Y_ori.dtype)
+        sys.exit(0)
         print(pca_encodeAE.shape)
         x = [i[0] for i in pca_encodeAE]
         y = [i[1] for i in pca_encodeAE]
@@ -642,7 +650,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
         plt.plot(pca_encodeAE[encode_means==2,0],pca_encodeAE[encode_means==2,1],'o',color='blue')
         plt.plot(pca_encodeAE[encode_means==3,0],pca_encodeAE[encode_means==3,1],'o',color='purple')
         plt.plot(pca_encodeAE[encode_means==4,0],pca_encodeAE[encode_means==4,1],'o',color='green')
-        plt.savefig('test2.png')
+        plt.savefig('test_tmp.png')
 
     return unsupervised_encoded
 
