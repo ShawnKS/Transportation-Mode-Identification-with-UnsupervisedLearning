@@ -622,17 +622,17 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
         # print('Confusion Matrix: ', confusion_matrix(Test_Y_ori, y_pred))
         print(unsupervised_encoded[0])
         print(np.array(unsupervised_encoded)[0].shape)
-        PCA_codearray = unsupervised_encoded[0].reshape(110,3968)
+        PCA_codearray = unsupervised_encoded[0].reshape(len(Test_X),3968)
         print(PCA_codearray)
         pca_ = PCA(n_components=2)
         pca_encodeAE = pca_.fit_transform(PCA_codearray)
-        pca_encodeAE.tofile("encodeAE.bin")
+        # pca_encodeAE.tofile("encodeAE.bin")
         print(pca_encodeAE)
         print(pca_encodeAE.dtype)
-        Test_Y_ori.tofile("label.bin")
+        # Test_Y_ori.tofile("label.bin")
         print(Test_Y_ori)
         print(Test_Y_ori.dtype)
-        sys.exit(0)
+        # sys.exit(0)
         print(pca_encodeAE.shape)
         x = [i[0] for i in pca_encodeAE]
         y = [i[1] for i in pca_encodeAE]
@@ -645,27 +645,32 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
         km5 = KMeans(n_clusters=5, init='random',max_iter=300,n_init=10,random_state=0)
         encode_means = km5.fit_predict(pca_encodeAE)
         print(np.array(encode_means).shape)
-        plt.plot(pca_encodeAE[encode_means==0,0],pca_encodeAE[encode_means==0,1],'o',color='black')
-        plt.plot(pca_encodeAE[encode_means==1,0],pca_encodeAE[encode_means==1,1],'o',color='red')
-        plt.plot(pca_encodeAE[encode_means==2,0],pca_encodeAE[encode_means==2,1],'o',color='blue')
-        plt.plot(pca_encodeAE[encode_means==3,0],pca_encodeAE[encode_means==3,1],'o',color='purple')
-        plt.plot(pca_encodeAE[encode_means==4,0],pca_encodeAE[encode_means==4,1],'o',color='green')
-        plt.savefig('test_tmp.png')
 
-    return unsupervised_encoded
+    return pca_encodeAE, Test_Y_ori
 
 def training_all_folds(label_proportions, num_filter):
     test_accuracy_fold = [[] for _ in range(len(label_proportions))]
     mean_std_acc = [[] for _ in range(len(label_proportions))]
     test_metrics_fold = [[] for _ in range(len(label_proportions))]
     mean_std_metrics = [[] for _ in range(len(label_proportions))]
+    pca_encodeAE_all = []
+    label_all = []
     for index, prop in enumerate(label_proportions):
         for i in range(len(kfold_dataset)):
-            test_accuracy, f1_macro, f1_weight = training(kfold_dataset[i], X_unlabeled=X_unlabeled, seed=7, prop=prop, num_filter_ae_cls_all=num_filter)
-            test_accuracy_fold[index].append(test_accuracy)
-            # 得到每个fold的accuracy
-            test_metrics_fold[index].append([f1_macro, f1_weight])
-            # 得到每个fold的different f1 score
+            pca_encodeAE, label = training(kfold_dataset[i], X_unlabeled=X_unlabeled, seed=7, prop=prop, num_filter_ae_cls_all=num_filter)
+            if(i == 0):
+                pca_encodeAE_all = pca_encodeAE
+                label_all = label
+            else:
+                pca_encodeAE_all = np.vstack((pca_encodeAE_all,pca_encodeAE))
+                label_all = np.hstack((label_all,label))
+        print(pca_encodeAE_all)
+        print(np.array(pca_encodeAE_all).shape)
+        print(label_all)
+        print(np.array(label_all).shape)
+        pca_encodeAE_all.tofile("encodeAE.bin")
+        label_all.tofile("label.bin")
+        sys.exit(0)
         accuracy_all = np.array(test_accuracy_fold[index])
         mean = np.mean(accuracy_all)
         std = np.std(accuracy_all)
