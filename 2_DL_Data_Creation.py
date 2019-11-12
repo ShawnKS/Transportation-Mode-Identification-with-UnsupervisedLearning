@@ -9,7 +9,14 @@ with open(filename, 'rb') as f:
     trip_motion_all_user_with_label, trip_motion_all_user_wo_label = pickle.load(f)
     #trip_motion_all_user_with_label = trip_motion_all_user_with_label[:1000]
     #trip_motion_all_user_wo_label = trip_motion_all_user_wo_label[:1000]
-
+print(trip_motion_all_user_with_label)
+print(trip_motion_all_user_wo_label)
+print(len(trip_motion_all_user_with_label))
+print(np.array(trip_motion_all_user_with_label).shape)
+# print(np.array(trip_motion_all_user_wo_label).shape)
+print(len(trip_motion_all_user_wo_label))
+print(trip_motion_all_user_wo_label.shape)
+sys.exit(0)
 # Apply some of data preprocessing step in the paper and prepare the final input layer for deep learning
 
 # Settings
@@ -27,11 +34,14 @@ max_percentile = 100
 
 def take_speed_percentile(trip, min_percentile, max_percentile):
     min_threshold = np.percentile(trip[1], min_percentile)#获取百分比为percentile处的数据
+    # 这里设置的min_percentile是0，max_percentile是100，即最大和最小速度，可以通过调参改变这个阈值
     max_threshold = np.percentile(trip[1], max_percentile)
     index_min = np.where(trip[1] >= min_threshold)[0]
     index_max = np.where(trip[1] <= max_threshold)[0]
+    # 上面得到的index_min和index_max是两个数组,numpy.intersect1d 求两个数组的交集
     index = np.intersect1d(index_min, index_max)
     trip = trip[:, index]
+    # 对选定范围内的值进行裁剪
     return trip
 
 
@@ -43,23 +53,28 @@ def trip_to_fixed_length(trip_motion_all_user, min_threshold, max_threshold, min
             trip, mode = trip
             trip = take_speed_percentile(trip, min_percentile=min_percentile, max_percentile=max_percentile)
             trip_length = len(trip[0])
+            # all() 条件都为True的时候返回True
             if all([trip_length >= min_threshold, trip_length < max_threshold, np.sum(trip[0, :]) >= min_distance,
                     np.sum(trip[1, :]) >= min_time]):
                 trip_padded = np.pad(trip, ((0, 0), (0, max_threshold - trip_length)), 'constant')
+                # 0轴前后填充0个 1轴前面填充0个，后面填充(max_threshold - trip_length)个
+                # np.pad() 返回一个数组
                 total_input.append(trip_padded)
                 total_label.append(mode)
             elif trip_length >= max_threshold:
                     quotient = trip_length // max_threshold
                     for i in range(quotient):
                         trip_truncated = trip[:, i * max_threshold:(i + 1) * max_threshold]
+                        # 如果trip的length大于所设置的max_threshold，对其进行切分
                         if all([np.sum(trip_truncated[0, :]) >= min_distance, np.sum(trip_truncated[1, :]) >= min_time]):
-                            total_input.append(trip_truncated)
+                            total_input.append(trip_truncated)  
                             total_label.append(mode)
                     remain_trip = trip[:, (i + 1) * max_threshold:]
                     if all([(trip_length % max_threshold) > min_threshold, np.sum(remain_trip[0, :]) >= min_distance,
                             np.sum(remain_trip[1, :]) >= min_time]):
                         trip_padded = np.pad(remain_trip, ((0, 0), (0, max_threshold - trip_length % max_threshold)),
                                              'constant')
+                                            #  切到最后一个进行补0
                         total_input.append(trip_padded)
                         total_label.append(mode)
 
@@ -97,6 +112,7 @@ X_unlabeled = trip_to_fixed_length(trip_motion_all_user_wo_label, min_threshold=
 
 
 def change_to_new_channel(input):
+    # 做K折交
     input1 = input[:, 0:1, :]
     input2 = input[:, 3:6, :]
     input = np.concatenate((input1, input2), axis=1)

@@ -41,15 +41,19 @@ for folder in users_folder:
         trajectory_all_user_wo_label.append(trajectory_one_user)
 
     elif len(os.listdir(geolife_dir + folder)) == 2:
+        # len(os.lostdir())为2说明带Label.txt
         trajectory_dir = geolife_dir + folder + '/Trajectory/'
         user_trajectories = os.listdir(trajectory_dir)
+        # trajectory在这个目录下面
         trajectory_one_user = []
         for plt in user_trajectories:
             with open(trajectory_dir + plt, 'r', newline='', encoding='utf-8') as f:
+                # 读取单个文件
                 GPS_logs = filter(lambda x: len(x.split(',')) == 7, f)
                 GPS_logs_split = map(lambda x: x.rstrip('\r\n').split(','), GPS_logs)
                 for row in GPS_logs_split:
                     trajectory_one_user.append([float(row[0]), float(row[1]), float(row[4])])
+                    # 取出经纬度和时间戳,append成一个数组
         trajectory_all_user_with_label.append(trajectory_one_user)
 
         label_dir = geolife_dir + folder + '/labels.txt'

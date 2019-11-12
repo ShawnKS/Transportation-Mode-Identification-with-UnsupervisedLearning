@@ -43,6 +43,7 @@ def unlabeled_gps_to_trip(trajectory_one_user, trip_time):
     i = 0
     while i < len(trajectory_one_user) - 1:
         delta_time = (trajectory_one_user[i+1][2] - trajectory_one_user[i][2]) * 24 * 3600
+        #  取出每一段的segment，如果前后时间相差太大则断开，认为不是同一段
         if 0 < delta_time <= trip_time:
             trip.append(trajectory_one_user[i])
             i += 1

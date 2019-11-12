@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import warnings
 warnings.filterwarnings("ignore")
@@ -327,11 +327,11 @@ def ensemble_train_set(Train_X, Train_Y):
 def loss_acc_evaluation(Test_X, Test_Y, loss_AE_label, input_labeled, k, sess):
     metrics = []
     i = 0
-    print(Test_X)
+#     print(Test_X)
     batch_size_val = 10
     print("lenth of Test_X")
-    print(len(Test_X))
-    print(len(Test_X) // batch_size_val)
+#     print(len(Test_X))
+#     print(len(Test_X) // batch_size_val)
     print(batch_size_val)
 #     global i
 #     global Test_X_batch
@@ -352,7 +352,7 @@ def loss_acc_evaluation(Test_X, Test_Y, loss_AE_label, input_labeled, k, sess):
                                             feed_dict={input_labeled: Test_X_batch})
         #验证集的loss和accuracy
         metrics.append([loss_AE_label_])
-    print(metrics)
+#     print(metrics)
     # sys.exit(0)
     mean_ = np.mean(np.array(metrics), axis=0)
     print("___________________________________")
@@ -418,7 +418,7 @@ def train_val_split(Train_X, Train_Y_ori):
         # print(label_index[:round(0.1*len(label_index))])
         #取前1%
         val_index.append(label_index[:round(0.1*len(label_index))])
-    print(val_index)
+#     print(val_index)
     val_index = np.hstack(tuple([label for label in val_index]))
     print(val_index)
     Val_X = Train_X[val_index]
@@ -429,7 +429,7 @@ def train_val_split(Train_X, Train_Y_ori):
     print(np.array(Val_Y).shape)
     train_index_ = np.delete(np.arange(0, len(Train_Y_ori)), val_index)
     #在训练集中去掉验证集
-    print(train_index_)
+#     print(train_index_)
     print(np.array(train_index_).shape)
     Train_X = Train_X[train_index_]
     print(np.array(Train_X).shape)
@@ -447,8 +447,8 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     np.random.seed(seed)
     random_sample = np.random.choice(len(Train_X), size=round(0.5*len(Train_X)), replace=False, p=None)
     print('random_sample')
-    print(random_sample)
-    print(Train_X)
+#     print(random_sample)
+#     print(Train_X)
     Train_X1 = Train_X[random_sample]
 
     #This random_sample generate a (220,) matrix which will random make a 
@@ -619,38 +619,38 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
         # f1_macro = f1_score(Test_Y_ori, y_pred, average='macro')
         # f1_weight = f1_score(Test_Y_ori, y_pred, average='weighted')
         # print('Semi-AE+Cls Test Accuracy of the Ensemble: ', test_accuracy)
-        # print('Confusion Matrix: ', confusion_matrix(Test_Y_ori, y_pred))
-        print(unsupervised_encoded[0])
-        print(np.array(unsupervised_encoded)[0].shape)
+#         # print('Confusion Matrix: ', confusion_matrix(Test_Y_ori, y_pred))
+#         print(unsupervised_encoded[0])
+#         print(np.array(unsupervised_encoded)[0].shape)
         PCA_codearray = unsupervised_encoded[0].reshape(len(Test_X),3968)
-        print(PCA_codearray)
+#         print(PCA_codearray)
         pca_ = PCA(n_components=2)
         pca_encodeAE = pca_.fit_transform(PCA_codearray)
         # pca_encodeAE.tofile("encodeAE.bin")
-        print(pca_encodeAE)
-        print(pca_encodeAE.dtype)
+#         print(pca_encodeAE)
+#         print(pca_encodeAE.dtype)
         # Test_Y_ori.tofile("label.bin")
-        print(Test_Y_ori)
-        print(Test_Y_ori.dtype)
+#         print(Test_Y_ori)
+#         print(Test_Y_ori.dtype)
         # sys.exit(0)
-        print(pca_encodeAE.shape)
+#         print(pca_encodeAE.shape)
         x = [i[0] for i in pca_encodeAE]
         y = [i[1] for i in pca_encodeAE]
-        print(x)
-        print(y) 
+#         print(x)
+#         print(y) 
         plt.figure(figsize=[12,12])
         # plt.plot(x, y,'v')
         # plt.show()
         # plt.savefig('test2.png')
         km5 = KMeans(n_clusters=5, init='random',max_iter=300,n_init=10,random_state=0)
         encode_means = km5.fit_predict(pca_encodeAE)
-        print(np.array(encode_means).shape)
+#         print(np.array(encode_means).shape)
 
     return pca_encodeAE, Test_Y_ori
 
 def training_all_folds(label_proportions, num_filter):
     accuracy = 0
-    for i in range(20):
+    for i in range(70):
         test_accuracy_fold = [[] for _ in range(len(label_proportions))]
         mean_std_acc = [[] for _ in range(len(label_proportions))]
         test_metrics_fold = [[] for _ in range(len(label_proportions))]
@@ -666,16 +666,16 @@ def training_all_folds(label_proportions, num_filter):
                 else:
                     pca_encodeAE_all = np.vstack((pca_encodeAE_all,pca_encodeAE))
                     label_all = np.hstack((label_all,label))
-            print(pca_encodeAE_all)
-            print(np.array(pca_encodeAE_all).shape)
-            print(label_all)
-            print(np.array(label_all).shape)
-            pca_encodeAE_all.tofile("encodeAE.bin")
-            label_all.tofile("label.bin")
-            encode_ = np.fromfile("encodeAE.bin",dtype=np.float32)
+#             print(pca_encodeAE_all)
+#             print(np.array(pca_encodeAE_all).shape)
+#             print(label_all)
+#             print(np.array(label_all).shape)
+            pca_encodeAE_all.tofile("encodeAE1.bin")
+            label_all.tofile("label1.bin")
+            encode_ = np.fromfile("encodeAE1.bin",dtype=np.float32)
             encode_ = encode_.reshape(551,2)
             encode_
-            label_ = np.fromfile("label.bin",dtype = np.int64)
+            label_ = np.fromfile("label1.bin",dtype = np.int64)
             label_
             km5 = KMeans(n_clusters=5, init='random',max_iter=300,n_init=10,random_state=0)
             encode_means = km5.fit_predict(encode_)
@@ -707,7 +707,7 @@ def training_all_folds(label_proportions, num_filter):
             print('accuracy for unsupervised model is : {}'.format(count/551))
             accuracy = accuracy + count/551
 
-    print('20 times average of accuracy is: {}'.format(accuracy/20))        
+    print('70 times average of accuracy is: {}'.format(accuracy/70))        
     sys.exit(0)
 # end
 

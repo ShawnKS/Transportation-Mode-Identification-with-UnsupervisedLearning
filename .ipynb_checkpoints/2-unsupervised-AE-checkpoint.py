@@ -649,36 +649,76 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     return pca_encodeAE, Test_Y_ori
 
 def training_all_folds(label_proportions, num_filter):
-    test_accuracy_fold = [[] for _ in range(len(label_proportions))]
-    mean_std_acc = [[] for _ in range(len(label_proportions))]
-    test_metrics_fold = [[] for _ in range(len(label_proportions))]
-    mean_std_metrics = [[] for _ in range(len(label_proportions))]
-    pca_encodeAE_all = []
-    label_all = []
-    for index, prop in enumerate(label_proportions):
-        for i in range(len(kfold_dataset)):
-            pca_encodeAE, label = training(kfold_dataset[i], X_unlabeled=X_unlabeled, seed=7, prop=prop, num_filter_ae_cls_all=num_filter)
-            if(i == 0):
-                pca_encodeAE_all = pca_encodeAE
-                label_all = label
-            else:
-                pca_encodeAE_all = np.vstack((pca_encodeAE_all,pca_encodeAE))
-                label_all = np.hstack((label_all,label))
-        print(pca_encodeAE_all)
-        print(np.array(pca_encodeAE_all).shape)
-        print(label_all)
-        print(np.array(label_all).shape)
-        pca_encodeAE_all.tofile("encodeAE.bin")
-        label_all.tofile("label.bin")
-        sys.exit(0)
-        accuracy_all = np.array(test_accuracy_fold[index])
-        mean = np.mean(accuracy_all)
-        std = np.std(accuracy_all)
-        mean_std_acc[index] = [mean, std]
-        metrics_all = np.array(test_metrics_fold[index])
-        mean_metrics = np.mean(metrics_all, axis=0)
-        std_metrics = np.std(metrics_all, axis=0)
-        mean_std_metrics[index] = [mean_metrics, std_metrics]
+    accuracy = 0
+    for i in range(20):
+        test_accuracy_fold = [[] for _ in range(len(label_proportions))]
+        mean_std_acc = [[] for _ in range(len(label_proportions))]
+        test_metrics_fold = [[] for _ in range(len(label_proportions))]
+        mean_std_metrics = [[] for _ in range(len(label_proportions))]
+        pca_encodeAE_all = []
+        label_all = []
+        for index, prop in enumerate(label_proportions):
+            for i in range(len(kfold_dataset)):
+                pca_encodeAE, label = training(kfold_dataset[i], X_unlabeled=X_unlabeled, seed=7, prop=prop, num_filter_ae_cls_all=num_filter)
+                if(i == 0):
+                    pca_encodeAE_all = pca_encodeAE
+                    label_all = label
+                else:
+                    pca_encodeAE_all = np.vstack((pca_encodeAE_all,pca_encodeAE))
+                    label_all = np.hstack((label_all,label))
+            print(pca_encodeAE_all)
+            print(np.array(pca_encodeAE_all).shape)
+            print(label_all)
+            print(np.array(label_all).shape)
+            pca_encodeAE_all.tofile("encodeAE.bin")
+            label_all.tofile("label.bin")
+            encode_ = np.fromfile("encodeAE.bin",dtype=np.float32)
+            encode_ = encode_.reshape(551,2)
+            encode_
+            label_ = np.fromfile("label.bin",dtype = np.int64)
+            label_
+            km5 = KMeans(n_clusters=5, init='random',max_iter=300,n_init=10,random_state=0)
+            encode_means = km5.fit_predict(encode_)
+            mini = np.zeros((5), dtype=np.float)
+            mini_coodinate = np.zeros((5,2), dtype=np.float)
+            mini = [100,100,100,100,100]
+            count = 0
+            for j in range(5):
+                for i in range(len(encode_[encode_means==j])):
+                        if(mini[j] >(np.sqrt(np.sum(np.square(encode_[encode_means==j][i] - [km5.cluster_centers_[j,0],km5.cluster_centers_[j,1]] ))))):
+                            mini[j] = (np.sqrt(np.sum(np.square(encode_[encode_means==j][i] - [km5.cluster_centers_[j,0],km5.cluster_centers_[j,1]] ))))
+                            mini_coodinate[j] = encode_[encode_means==j][i]
+            cluster_fake = np.zeros(5,)
+            for j in range(5):
+                for i in range(len(encode_)):
+                    if(mini_coodinate[j][0] == encode_[i][0]):
+                        print(i)
+                        print(label_[i])
+                        cluster_fake[j] = label_[i]
+
+            label_fake = np.zeros(551,)
+            for i in range(5):
+                label_fake[encode_means==i] =cluster_fake[i]
+            count = 0
+            for i in range(len(label_)):
+                if(label_fake[i] == label_[i]):
+                    count = count+1
+            print(count)
+            print('accuracy for unsupervised model is : {}'.format(count/551))
+            accuracy = accuracy + count/551
+
+    print('20 times average of accuracy is: {}'.format(accuracy/20))        
+    sys.exit(0)
+# end
+
+    accuracy_all = np.array(test_accuracy_fold[index])
+    mean = np.mean(accuracy_all)
+    std = np.std(accuracy_all)
+    mean_std_acc[index] = [mean, std]
+    metrics_all = np.array(test_metrics_fold[index])
+    mean_metrics = np.mean(metrics_all, axis=0)
+    std_metrics = np.std(metrics_all, axis=0)
+    mean_std_metrics[index] = [mean_metrics, std_metrics]
     for index, prop in enumerate(label_proportions):
         print('All Test Accuracy For Semi-AE+Cls with Prop {} are: {}'.format(prop, test_accuracy_fold[index]))
         print('Semi-AE+Cls test accuracy for prop {}: Mean {}, std {}'.format(prop, mean_std_acc[index][0], mean_std_acc[index][1]))
@@ -687,6 +727,6 @@ def training_all_folds(label_proportions, num_filter):
     return test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics
 
 unsupervised_encoded = training_all_folds(
-    label_proportions=[0.15, 0.35], num_filter=[32, 32, 64, 64])
+    label_proportions=[0.15], num_filter=[32, 32, 64, 64])
 
 
