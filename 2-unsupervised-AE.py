@@ -28,7 +28,7 @@ y_pred = [0, 0, 2, 2, 0, 2]
 print(confusion_matrix(y_true, y_pred))
 
 # Training Settings
-batch_size = 100
+batch_size = 400
 latent_dim = 800
 change = 10
 units = 800  # num unit in the MLP hidden layer
@@ -47,17 +47,23 @@ initializer = tf.contrib.layers.xavier_initializer(uniform=True, seed=None, dtyp
 
 # Import the data
 #filename = '../Mode-codes-Revised/paper2_data_for_DL_train_val_test.pickle'
-filename = '/home/sxz/data/geolife_Data/paper2_data_for_DL_kfold_dataset_RL.pickle'
+filename = '/home/sxz/data/geolife_Data/paper2_data_for_DL_kfold_dataset_RL_augment.pickle'
+encode_len = 0
 with open(filename, 'rb') as f:
     kfold_dataset, X_unlabeled = pickle.load(f)
-    # print(len(kfold_dataset[1][1]))
+    for i in range(5):
+        print(np.shape(kfold_dataset[i][3]))
+        encode_len += len(kfold_dataset[i][3])
+        # 统计kfold_dataset的大小
+    print(encode_len)
+    # print(len(kfold_dataset[2][2])
     # print(np.array(kfold_dataset[1][4]).shape)
     # print(X_unlabeled)
     # print(np.array(X_unlabeled).shape)
     # print(len(kfold_dataset))
     # print(len(X_unlabeled))
 #the length of Kfold_dataset is 5(the data already labelled)
-#every part in kfold_dataset contains 441 segments, which is formed as a 
+#every part in kfold_dataset contains some(train、test、valid) segments, which is formed as a 
 #structure  (441 × 1 × 248 × 4) (441,) (110 × 1 × 248 × 4) (110 × 5) (110,)
 #totoal is 5×441 × 1 × 248 × 4
 
@@ -299,11 +305,10 @@ def semi_supervised(input_labeled, input_combined, true_label, alpha, beta, num_
 
 def get_combined_index(train_x_comb):
     x_combined_index = np.arange(len(train_x_comb))
-    print(len(x_combined_index))
-    #646
+    # print(len(x_combined_index))
     # sys.exit(0)
     np.random.shuffle(x_combined_index)
-    #将combined_index做shuffle
+    #将combined_index做shuffle 随机index
     # print(x_combined_index)
     # sys.exit(0)
     return x_combined_index
@@ -316,6 +321,7 @@ def get_labeled_index(train_x_comb, train_x):
         np.random.shuffle(l)
         labeled_index.append(l)
     labeled_index.append(np.arange(len(train_x_comb) % len(train_x)))
+    # 这里对labeled_data做了一点数据增强，使得后面可以重复训练
     return np.concatenate(labeled_index)
 
 
@@ -329,10 +335,10 @@ def loss_acc_evaluation(Test_X, Test_Y, loss_AE_label, input_labeled, k, sess):
     i = 0
     print(Test_X)
     batch_size_val = 10
-    print("lenth of Test_X")
-    print(len(Test_X))
-    print(len(Test_X) // batch_size_val)
-    print(batch_size_val)
+    # print("lenth of Test_X")
+    # print(len(Test_X))
+    # print(len(Test_X) // batch_size_val)
+    # print(batch_size_val)
 #     global i
 #     global Test_X_batch
 #     global Test_Y_
@@ -445,11 +451,13 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     # ori means its classification
     random.seed(seed)
     np.random.seed(seed)
-    random_sample = np.random.choice(len(Train_X), size=round(0.5*len(Train_X)), replace=False, p=None)
+    random_sample = np.random.choice(len(Train_X), size=round(333), replace=False, p=None)
     print('random_sample')
     print(random_sample)
     print(Train_X)
     Train_X1 = Train_X[random_sample]
+
+    # 只取labeled_data中的一半做训练 通过改变size可以改变这个训练集的比例
 
     #This random_sample generate a (220,) matrix which will random make a 
     #(220,1,248,4)matrix from (441,1,248,4) if we use the statement A = A[random_sample]
@@ -460,7 +468,12 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     Train_Y_ori = Train_Y_ori[random_sample]
     #now it's only 220x
     #将验证集从训练集中抽出来
+    print("before {}".format(np.shape(Train_X)))
     Train_X, Train_Y, Train_Y_ori, Val_X, Val_Y, Val_Y_ori = train_val_split(Train_X, Train_Y_ori)
+
+    # 这里通过train_Y_ori的size改变了train_X的size
+
+    print("after: {} and Val_X: {}".format(np.shape(Train_X), np.shape(Val_X)))
     #将验证集从训练集中单独抽出来
     Test_X = one_fold[2]
     # print(len(Test_X))
@@ -472,16 +485,25 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     # print(len(Test_Y_ori))
     # print(Test_Y_ori)
     # sys.exit(0)
+
+    # 因为我做了data_augment,unlabel的tuple有30406个,label的有4285个，使用kfold的方法进行交叉训练
+    # 这里我人为改少了参与训练数据的比例，其中label data 300个 unlabel data 29700个(其实根本就是混淆的)
+    # 因为训练的时候loss_function完全与label无关(无mlp,只做ae),所以讲道理的话应该是与是否label无关的
+    # 出于实验设计暂时还是先这样拼接 混着一部分label data进行训练吧
+    random_sample_unlabel = np.random.choice(len(X_unlabeled), size=round(29700), replace=False, p=None)
     random_sample = np.random.choice(len(X_unlabeled), size=round(prop * len(X_unlabeled)), replace=False, p=None)
+
+    # 通过改变prop来改变使用Unlabeled data的比例
+
     # print(len(X_unlabeled))
     # 4310
-    X_unlabeled = X_unlabeled[random_sample]
+    X_unlabeled = X_unlabeled[random_sample_unlabel]
     # print(len(X_unlabeled))
     # 646
     # sys.exit(0)
     #随机选择指定量的无标签数据
     Train_X_Comb = X_unlabeled
-    #别忘了写计网的前端
+
     input_size = list(np.shape(Test_X)[1:])
     #input_size是第一个维度之后的维度
     #np.shape() 和np.array().shape的功能差不多
@@ -491,8 +513,14 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     num_filter_ae_cls_all = [[32, 32, 64, 64, 128, 128]]
     unsupervised_encoded = []
 
+    print("X_Comb : {}".format(np.shape(Train_X_Comb)))
+    Train_X = np.concatenate((Train_X,Train_X_Comb),axis=0)
+    # 拼成30000个点(30000 × 1 × 248 × 4)
+    # 其中300个label data , 29700个unlabel data
+    # print(np.shape(Train_X))
+    # print(np.shape(Test_X))
+
     # This for loop is only for implementing ensemble
-    # 以下loop实现了ensemble(你懂得)
     for z in range(len(num_filter_ae_cls_all)):
         # Change the following seed to None only for Ensemble.
         tf.reset_default_graph()  # Used for ensemble
@@ -519,7 +547,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
             val_accuracy = {-2: 0, -1: 0}
             val_loss = {-2: 10, -1: 10}
             # 对val_loss进行初始化
-            num_batches = len(Train_X_Comb) // batch_size
+            num_batches = len(Train_X) // batch_size
             # alfa_val1 = [0.0, 0.0, 1.0, 1.0, 1.0]
             # beta_val1 = [1.0, 1.0, 0.1, 0.1, 0.1]
             alfa_val = 1  ## 0
@@ -534,38 +562,44 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                 #beta_val = min(((1 - 0.1) / (-epochs_ae_cls)) * k + 1, 0.1) ##
                 #alfa_val = max(((1.5 - 1) / (epochs_ae_cls)) * k + 1, 1.5)
 
-                x_combined_index = get_combined_index(train_x_comb=Train_X_Comb)
+                x_combined_index = get_combined_index(train_x_comb=Train_X)
                 # print(x_combined_index)
                 # 646
                 # print(len(x_combined_index))
                 x_labeled_index = get_labeled_index(train_x_comb=Train_X_Comb, train_x=Train_X)
+
+                # print(len(x_labeled_index))
+                # print(len(x_combined_index))
+                # print(num_batches)
+                # sys.exit(0)
+
                 # print(x_labeled_index)
                 # 646
                 # print(len(x_labeled_index))
                 for i in range(num_batches):
                     # Train_X_comb=646    batch_size=100   num_batches = (Train_X_comb // batch_size = 6)
-                    unlab_index_range = x_combined_index[i * batch_size: (i + 1) * batch_size]
+                    Comb_index_range = x_combined_index[i * batch_size: (i + 1) * batch_size]
                     # print(unlab_index_range)
                     # print(len(unlab_index_range))\
                     # print(np.array(unlab_index_range).shape)
                     # (100,)
                     # 100
                     # x_combined_index就是unlab_index_range
-                    lab_index_range = x_labeled_index[i * batch_size: (i + 1) * batch_size]
+                    # lab_index_range = x_labeled_index[i * batch_size: (i + 1) * batch_size]
                     # label的index range 格式为(100,)
                     # print(np.array(Train_X_Comb).shape)
                     # (646,1, 248 ,4)
                     # print(Train_X_Comb)
                     # print(len(Train_X_Comb))
-                    X_ae = Train_X_Comb[unlab_index_range]
+                    # X_ae = Train_X_Comb[unlab_index_range]
                     # (100,1, 248 , 4)
                     #抽100个unlabeled data的Index出来
                     # print(X_ae)
                     # print(len(X_ae))
                     # sys.exit(0)
-                    X_cls = Train_X[lab_index_range]
+                    X_cls = Train_X[Comb_index_range]
                     # 抽100个labeled data 数据(input X)的index出来
-                    Y_cls = Train_Y[lab_index_range]
+                    # Y_cls = Train_Y[lab_index_range]
                     # 100个labeled data的label
                     loss_ae_, _ = sess.run([loss_AE_label, train_op_ae_label],
                                                                      feed_dict={input_labeled: X_cls,})
@@ -577,9 +611,9 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                 # sys.exit(0)
                 unlab_index_range = x_combined_index[(i + 1) * batch_size:]
                 lab_index_range = x_labeled_index[(i + 1) * batch_size:]
-                X_ae = Train_X_Comb[unlab_index_range]
+                # X_ae = Train_X_Comb[unlab_index_range]
                 X_cls = Train_X[lab_index_range]
-                Y_cls = Train_Y[lab_index_range]
+                # Y_cls = Train_Y[lab_index_range]
                 loss_ae_, _ = sess.run([loss_AE_label, train_op_ae_label],
                                                                      feed_dict={input_labeled: X_cls,})
                 # print('Epoch Num {}, Batches Num {}, Loss_AE {}, Loss_cls {}, Accuracy_train {}'.format
@@ -620,60 +654,77 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
         # f1_weight = f1_score(Test_Y_ori, y_pred, average='weighted')
         # print('Semi-AE+Cls Test Accuracy of the Ensemble: ', test_accuracy)
         # print('Confusion Matrix: ', confusion_matrix(Test_Y_ori, y_pred))
-        print(unsupervised_encoded[0])
-        print(np.array(unsupervised_encoded)[0].shape)
-        PCA_codearray = unsupervised_encoded[0].reshape(len(Test_X),3968)
-        print(PCA_codearray)
-        pca_ = PCA(n_components=2)
-        pca_encodeAE = pca_.fit_transform(PCA_codearray)
-        # pca_encodeAE.tofile("encodeAE.bin")
-        print(pca_encodeAE)
-        print(pca_encodeAE.dtype)
-        # Test_Y_ori.tofile("label.bin")
-        print(Test_Y_ori)
-        print(Test_Y_ori.dtype)
-        # sys.exit(0)
-        print(pca_encodeAE.shape)
-        x = [i[0] for i in pca_encodeAE]
-        y = [i[1] for i in pca_encodeAE]
-        print(x)
-        print(y) 
-        plt.figure(figsize=[12,12])
-        # plt.plot(x, y,'v')
-        # plt.show()
-        # plt.savefig('test2.png')
-        km5 = KMeans(n_clusters=5, init='random',max_iter=300,n_init=10,random_state=0)
-        encode_means = km5.fit_predict(pca_encodeAE)
-        print(np.array(encode_means).shape)
+        # print(unsupervised_encoded[0])
+        # print(np.array(unsupervised_encoded)[0].shape)
+        # print(np.shape(unsupervised_encoded))
 
-    return pca_encodeAE, Test_Y_ori
+        # PCA part
+        print(unsupervised_encoded)
+        print(np.shape(unsupervised_encoded))
+        print(np.shape(unsupervised_encoded[0]))
+        # sys.exit(0)
+        # PCA_codearray = unsupervised_encoded[0].reshape(len(Test_X),3968)
+        # print(PCA_codearray)
+        # pca_ = PCA(n_components=2)
+        # pca_encodeAE = pca_.fit_transform(PCA_codearray)
+        # # pca_encodeAE.tofile("encodeAE.bin")
+        # print(pca_encodeAE)
+        # print(pca_encodeAE.dtype)
+        # # Test_Y_ori.tofile("label.bin")
+        # print(len(Test_Y_ori))
+        # # print(Test_Y_ori.dtype)
+        # sys.exit(0)
+        # print(pca_encodeAE.shape)
+        # x = [i[0] for i in pca_encodeAE]
+        # y = [i[1] for i in pca_encodeAE]
+        # print(x)
+        # print(y) 
+        # # plt.figure(figsize=[12,12])
+        # # plt.plot(x, y,'v')
+        # # plt.show()
+        # # plt.savefig('test2.png')
+        # km5 = KMeans(n_clusters=5, init='random',max_iter=300,n_init=10,random_state=0)
+        # encode_means = km5.fit_predict(pca_encodeAE)
+        # PCA part finished
+
+        # print(np.array(encode_means).shape)
+
+    return unsupervised_encoded[0], Test_Y_ori
 
 def training_all_folds(label_proportions, num_filter):
     accuracy = 0
-    for i in range(20):
+    for i in range(1):
         test_accuracy_fold = [[] for _ in range(len(label_proportions))]
         mean_std_acc = [[] for _ in range(len(label_proportions))]
         test_metrics_fold = [[] for _ in range(len(label_proportions))]
         mean_std_metrics = [[] for _ in range(len(label_proportions))]
-        pca_encodeAE_all = []
+        AE_encode_all = []
         label_all = []
         for index, prop in enumerate(label_proportions):
             for i in range(len(kfold_dataset)):
-                pca_encodeAE, label = training(kfold_dataset[i], X_unlabeled=X_unlabeled, seed=7, prop=prop, num_filter_ae_cls_all=num_filter)
+                AE_encode, label = training(kfold_dataset[i], X_unlabeled=X_unlabeled, seed=7, prop=prop, num_filter_ae_cls_all=num_filter)
                 if(i == 0):
-                    pca_encodeAE_all = pca_encodeAE
+                    AE_encode_all = AE_encode
                     label_all = label
                 else:
-                    pca_encodeAE_all = np.vstack((pca_encodeAE_all,pca_encodeAE))
+                    AE_encode_all = np.vstack((AE_encode_all,AE_encode))
                     label_all = np.hstack((label_all,label))
-            print(pca_encodeAE_all)
-            print(np.array(pca_encodeAE_all).shape)
+            print(AE_encode_all)
+            print(np.array(AE_encode_all).shape)
             print(label_all)
-            print(np.array(label_all).shape)
-            pca_encodeAE_all.tofile("encodeAE.bin")
-            label_all.tofile("label.bin")
-            encode_ = np.fromfile("encodeAE.bin",dtype=np.float32)
-            encode_ = encode_.reshape(551,2)
+            print(np.shape(label_all))
+            # sys.exit(0)
+            with open('/home/sxz/data/geolife_Data/Encoded_data.pickle', 'wb') as f:
+                pickle.dump([AE_encode_all, label_all], f)
+            with open('/home/sxz/data/geolife_Data/Encoded_data.pickle', 'rb') as f:
+                a1 , b1 = pickle.load(f)
+            print(np.shape(a1))
+            print(np.shape(b1))
+            sys.exit(0)
+            # AE_encode_all.tofile("encodeAE.bin")
+            # label_all.tofile("label.bin")
+            # encode_ = np.fromfile("encodeAE.bin",dtype=np.float32)
+            encode_ = encode_.reshape(encode_len,2)
             encode_
             label_ = np.fromfile("label.bin",dtype = np.int64)
             label_
@@ -696,7 +747,7 @@ def training_all_folds(label_proportions, num_filter):
                         print(label_[i])
                         cluster_fake[j] = label_[i]
 
-            label_fake = np.zeros(551,)
+            label_fake = np.zeros(encode_len,)
             for i in range(5):
                 label_fake[encode_means==i] =cluster_fake[i]
             count = 0
@@ -704,10 +755,10 @@ def training_all_folds(label_proportions, num_filter):
                 if(label_fake[i] == label_[i]):
                     count = count+1
             print(count)
-            print('accuracy for unsupervised model is : {}'.format(count/551))
-            accuracy = accuracy + count/551
+            print('accuracy for unsupervised model is : {}'.format(count/encode_len))
+            accuracy = accuracy + count/encode_len
 
-    print('20 times average of accuracy is: {}'.format(accuracy/20))        
+    print('5 times average of accuracy is: {}'.format(accuracy))        
     sys.exit(0)
 # end
 
@@ -726,7 +777,10 @@ def training_all_folds(label_proportions, num_filter):
         print('\n')
     return test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics
 
+import time 
+
+current = time.clock()
 unsupervised_encoded = training_all_folds(
     label_proportions=[0.15], num_filter=[32, 32, 64, 64])
-
+print("time used:{}".format(time.clock() - current))
 
