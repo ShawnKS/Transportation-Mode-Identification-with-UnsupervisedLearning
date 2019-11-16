@@ -25,7 +25,7 @@ start_time = time.clock()
 np.random.seed(7)
 random.seed(7)
 
-filename = '/home/sxz/data/geolife_Data/Augment_origin_data_Cross1.pickle'
+filename = '/home/sxz/data/geolife_Data/Origin_data_Cross.pickle'
 with open(filename, 'rb') as f:
     Train_X, Train_Y,Test_X, Test_Y, Test_Y_ori = pickle.load(f)
 # Training and test set for GPS segments
@@ -52,16 +52,7 @@ Threshold = 31
 # Model and Compile
 model = Sequential()
 activ = 'relu'
-model.add(Conv2D(16, (1, 3), strides=(1, 1), padding='same', activation=activ, input_shape=(1, 248, 4)))
-A = model.output_shape
-print(A)
-model.add(Conv2D(16, (1, 3), strides=(1, 1), padding='same', activation=activ))
-A = model.output_shape
-print(A)
-model.add(MaxPooling2D(pool_size=(1, 2)))
-A = model.output_shape
-print(A)
-model.add(Conv2D(32, (1, 3), strides=(1, 1), padding='same', activation=activ))
+model.add(Conv2D(32, (1, 3), strides=(1, 1), padding='same', activation=activ, input_shape=(1, 248, 4)))
 A = model.output_shape
 print(A)
 model.add(Conv2D(32, (1, 3), strides=(1, 1), padding='same', activation=activ))
@@ -74,6 +65,15 @@ model.add(Conv2D(64, (1, 3), strides=(1, 1), padding='same', activation=activ))
 A = model.output_shape
 print(A)
 model.add(Conv2D(64, (1, 3), strides=(1, 1), padding='same', activation=activ))
+A = model.output_shape
+print(A)
+model.add(MaxPooling2D(pool_size=(1, 2)))
+A = model.output_shape
+print(A)
+model.add(Conv2D(128, (1, 3), strides=(1, 1), padding='same', activation=activ))
+A = model.output_shape
+print(A)
+model.add(Conv2D(128, (1, 3), strides=(1, 1), padding='same', activation=activ))
 A = model.output_shape
 print(A)
 model.add(MaxPooling2D(pool_size=(1, 2)))
@@ -97,7 +97,7 @@ print(A)
 optimizer = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
-offline_history = model.fit(Train_X, Train_Y, epochs=50, batch_size=200, shuffle=False,
+offline_history = model.fit(Train_X, Train_Y, epochs=20, batch_size=100, shuffle=False,
                             validation_data=(Test_X, Test_Y))
 hist = offline_history
 print('Val_accuracy', hist.history['val_acc'])
