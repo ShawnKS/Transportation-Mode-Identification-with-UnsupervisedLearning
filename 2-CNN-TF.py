@@ -1,3 +1,6 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "6"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import numpy as np
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, f1_score
 import random
@@ -5,7 +8,7 @@ import pickle
 import tensorflow as tf
 import keras
 # Settings
-batch_size = 100
+batch_size = 40
 latent_dim = 800
 units = 800  # num unit in the MLP hidden layer
 num_dense = 0
@@ -15,8 +18,9 @@ strides = 1
 pool_size = (1, 2)
 num_class = 5
 initializer = tf.glorot_uniform_initializer()
+import sys
 
-filename = '../Mode-codes-Revised/paper2_data_for_DL_kfold_dataset.pickle'
+filename = '/home/sxz/data/geolife_Data/paper2_data_for_DL_kfold_dataset_RL.pickle'
 with open(filename, 'rb') as f:
     kfold_dataset, _ = pickle.load(f)
 
@@ -56,7 +60,12 @@ def cnn_model(input_labeled, true_label, num_filter):
 
 def loss_acc_evaluation(Test_X, Test_Y, sess, input_labeled, true_label, k, loss_cls, accuracy_cls):
     metrics = []
-    for i in range(len(Test_X) // batch_size):
+    a = len(Test_X) // batch_size
+    if(a==0):
+        n = len(Test_X)
+    else:
+        n = a
+    for i in range(n):
         Test_X_batch = Test_X[i * batch_size:(i + 1) * batch_size]
         Test_Y_batch = Test_Y[i * batch_size:(i + 1) * batch_size]
         loss_cls_, accuracy_cls_ = sess.run([loss_cls, accuracy_cls],
@@ -130,6 +139,9 @@ def training(one_fold, seed, prop, num_filter, epochs=20):
         sess.run(tf.global_variables_initializer())
         saver = tf.train.Saver(max_to_keep=20)
         num_batches = len(Train_X) // batch_size
+        print(len(Train_X))
+        print(num_batches)
+        
         for k in range(epochs):
             for i in range(num_batches):
                 X_cls = Train_X[i * batch_size: (i + 1) * batch_size]
@@ -138,7 +150,6 @@ def training(one_fold, seed, prop, num_filter, epochs=20):
                                                        feed_dict={input_labeled: X_cls, true_label: Y_cls})
                 print('Epoch Num {}, Batches Num {}, Loss_cls {}, Accuracy_train {}'.format
                       (k, i, np.round(loss_cls_, 3), np.round(accuracy_cls_, 3)))
-
             X_cls = Train_X[(i + 1) * batch_size:]
             Y_cls = Train_Y[(i + 1) * batch_size:]
             loss_cls_, accuracy_cls_, _ = sess.run([loss_cls, accuracy_cls, train_op],
@@ -150,14 +161,16 @@ def training(one_fold, seed, prop, num_filter, epochs=20):
             val_loss.update({k: loss_val})
             val_accuracy.update({k: acc_val})
             print('====================================================')
-            saver.save(sess, "/Conv-Semi-TF-PS/" + str(prop), global_step=k)
+            saver.save(sess, "/home/sxz/cnv-TF/" + str(prop), global_step=k)
             if all([val_accuracy[k] < val_accuracy[k - 1], val_accuracy[k] < val_accuracy[k - 2]]):
                 break
         print("Val Accuracy Over Epochs: ", val_accuracy)
         print("Val Loss Over Epochs: ", val_loss)
         max_accuracy_val = max(val_accuracy.items(), key=lambda k: k[1])
-        saver.restore(sess, "/Conv-Semi-TF-PS/" + str(prop) + '-' + str(max_accuracy_val[0]))
-
+        if(prop == 1):
+            saver.restore(sess, "/home/sxz/cnv-TF/" + str(prop) + '-' + str(max_accuracy_val[0]))
+        else:
+            saver.restore(sess, "/home/sxz/cnv-TF/" + str(prop)  + str(max_accuracy_val[0]))
         y_pred = prediction_prob(Test_X, classifier_output, input_labeled, sess)
         test_acc = accuracy_score(Test_Y_ori, y_pred)
         f1_macro = f1_score(Test_Y_ori, y_pred, average='macro')
