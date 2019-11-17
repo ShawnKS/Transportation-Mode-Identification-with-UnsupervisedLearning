@@ -113,7 +113,7 @@ def prediction_prob(Test_X, classifier_output, input_labeled, sess):
 # ===================================
 
 
-def training(one_fold, seed, prop, num_filter, epochs=20):
+def training(one_fold, seed, prop, num_filter, epochs=50):
     Train_X = one_fold[0]
     Train_Y_ori = one_fold[1]
     Test_X = one_fold[2]
@@ -137,7 +137,7 @@ def training(one_fold, seed, prop, num_filter, epochs=20):
         true_label = tf.placeholder(tf.float32, shape=[None, num_class], name='true_label')
         loss_cls, accuracy_cls, train_op, classifier_output = cnn_model(input_labeled, true_label, num_filter)
         sess.run(tf.global_variables_initializer())
-        saver = tf.train.Saver(max_to_keep=20)
+        saver = tf.train.Saver(max_to_keep=60)
         num_batches = len(Train_X) // batch_size
         print(len(Train_X))
         print(num_batches)
@@ -173,10 +173,25 @@ def training(one_fold, seed, prop, num_filter, epochs=20):
             saver.restore(sess, "/home/sxz/cnv-TF/" + str(prop)  + str(max_accuracy_val[0]))
         y_pred = prediction_prob(Test_X, classifier_output, input_labeled, sess)
         test_acc = accuracy_score(Test_Y_ori, y_pred)
+
+        print(np.where(Test_Y_ori==0))
+        print(Test_Y_ori[np.where(Test_Y_ori==0)])
+        print()
+        marco_acc = 0
+        for j in range(5):
+            count = 0
+            for i in range(len(Test_Y_ori[Test_Y_ori==j])):
+                if(Test_Y_ori[np.where(Test_Y_ori==j)][i] == y_pred[np.where(Test_Y_ori==j)][i] ):
+                    count += 1
+            print(y_pred[np.where(Test_Y_ori==j)])
+            print(count)
+            print(count/len(Test_Y_ori[Test_Y_ori==j]))
+            marco_acc += count/len(Test_Y_ori[Test_Y_ori==j])
+        print(marco_acc/5)
         f1_macro = f1_score(Test_Y_ori, y_pred, average='macro')
         f1_weight = f1_score(Test_Y_ori, y_pred, average='weighted')
         print('CNN Classifier test accuracy {}'.format(test_acc))
-        return test_acc, f1_macro, f1_weight
+        return test_acc, f1_macro, f1_weight , marco_acc/5
 
 
 def training_all_folds(label_proportions, num_filter):
@@ -186,9 +201,9 @@ def training_all_folds(label_proportions, num_filter):
     mean_std_metrics = [[] for _ in range(len(label_proportions))]
     for index, prop in enumerate(label_proportions):
         for i in range(len(kfold_dataset)):
-            test_accuracy, f1_macro, f1_weight = training(kfold_dataset[i], seed=7, prop=prop, num_filter=num_filter)
+            test_accuracy, f1_macro, f1_weight ,marco_acc = training(kfold_dataset[i], seed=7, prop=prop, num_filter=num_filter)
             test_accuracy_fold[index].append(test_accuracy)
-            test_metrics_fold[index].append([f1_macro, f1_weight])
+            test_metrics_fold[index].append([f1_macro, f1_weight ,marco_acc])
         accuracy_all = np.array(test_accuracy_fold[index])
         mean = np.mean(accuracy_all)
         std = np.std(accuracy_all)
@@ -204,7 +219,7 @@ def training_all_folds(label_proportions, num_filter):
         print('\n')
     return test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics
 
-test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(label_proportions=[0.1, 0.25, 0.50, 0.75, 1.0],
+test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(label_proportions=[0.5,1],
                                                   num_filter=[32, 32, 64, 64, 128, 128])
 
 

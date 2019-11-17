@@ -209,6 +209,7 @@ def compute_trip_motion_features(all_trip_one_user, data_type):
             if data_type == 'labeled':
                 mode = trip[0][3]
                 # Randomly check that all trip[i][3] have the same mode
+                # 并不能保证每一段的mode完全相同,随机检查
                 assert trip[0][3] == trip[np.random.randint(1, len(trip)-1, 1)[0]][3]
                 trip_motion_features = remove_error_labeled(trip_motion_features, mode)
                 all_trip_motion_features_one_user.append((trip_motion_features, mode))

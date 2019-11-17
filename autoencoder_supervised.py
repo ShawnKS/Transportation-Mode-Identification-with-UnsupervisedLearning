@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "4"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import numpy as np
 import sys
@@ -22,8 +22,9 @@ filename = '/home/sxz/data/geolife_Data/Origin_data_Cross.pickle'
 with open(filename, 'rb') as f:
     Train_X, Train_Y,Test_X, Test_Y, Test_Y_ori = pickle.load(f)
 
-times = 100
+times = 20
 acc_all = 0
+acc_w_all = 0
 for i in range(times):
     tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True))
     # sess = print(tf.Session(config=tf.ConfigProto(log_device_placement=True)))
@@ -100,10 +101,11 @@ for i in range(times):
     A = model.output_shape
     print(A)
     acc = 0
+    acc_w = 0
     optimizer = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
     model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
-    offline_history = model.fit(Train_X, Train_Y, epochs=50, batch_size=200, shuffle=False,
+    offline_history = model.fit(Train_X, Train_Y, epochs=50, batch_size=256, shuffle=False,
                                 validation_data=(Test_X, Test_Y))
     hist = offline_history
     print('Val_accuracy', hist.history['val_acc'])
@@ -119,6 +121,7 @@ for i in range(times):
 
     y_pred = np.argmax(model.predict(Test_X, batch_size=100), axis=1)
     print(y_pred)
+    print(Test_Y_ori)
 
 
     print('Test Accuracy %: ', accuracy_score(Test_Y_ori, y_pred))
@@ -134,9 +137,13 @@ for i in range(times):
         res.append(row.split())
     lr = report[-1].split()
     res.append([' '.join(lr[:3])]+lr[3:])
+    acc_w += float(res[7][0].split(' ')[2])
     for i in range(5):
         acc += float(res[i+1][1])
     print(acc)
     acc_all += acc/5
+    acc_w_all += acc_w
 fin = acc_all/times
+fin_w = acc_w_all/times
 print(fin)
+print(fin_w)

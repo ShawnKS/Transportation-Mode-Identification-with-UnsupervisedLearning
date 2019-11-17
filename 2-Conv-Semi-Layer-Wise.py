@@ -22,7 +22,7 @@ reg_l2 = tf.contrib.layers.l1_regularizer(scale=0.1)
 initializer = tf.glorot_uniform_initializer()
 
 # Import data
-filename = '../Mode-codes-Revised/paper2_data_for_DL_kfold_dataset.pickle'
+filename = '/home/sxz/data/geolife_Data/paper2_data_for_DL_kfold_dataset_RL_augment.pickle'
 with open(filename, 'rb') as f:
     kfold_dataset, X_unlabeled = pickle.load(f)
 a= 1
@@ -274,14 +274,14 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter, epochs_ae=10, epochs
             val_loss.update({k: loss_val})
             val_accuracy.update({k: acc_val})
             print('====================================================')
-            saver.save(sess, "/Conv-Semi-TF-PS/" + str(prop), global_step=k)
+            saver.save(sess, "/home/sxz/cnv-TF/" + str(prop), global_step=k)
             if all([val_accuracy[k] < val_accuracy[k - 1], val_accuracy[k] < val_accuracy[k - 2]]):
                 break
         print("Val Accuracy Over Epochs: ", val_accuracy)
         print("Val loss Over Epochs: ", val_loss)
 
         max_acc = max(val_accuracy.items(), key=lambda k: k[1])[0]
-        save_path = "/Conv-Semi-TF-PS/" + str(prop) + '-' + str(max_acc)
+        save_path = "/home/sxz/cnv-TF/" + str(prop) + '-' + str(max_acc)
         saver.restore(sess, save_path)
 
         y_pred = prediction_prob(Test_X, classifier_output, input_labeled, sess)

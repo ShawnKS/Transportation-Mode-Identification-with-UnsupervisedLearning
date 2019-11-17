@@ -170,6 +170,7 @@ def semi_supervised(input_labeled, input_combined, true_label, alpha, beta, num_
     loss_cls = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=true_label, logits=classifier_output),
                               name='loss_cls')
     total_loss = alpha*loss_ae + beta*loss_cls
+    # 层数相同=参数数目相同=梯度可以相加同时求导
     #total_loss = beta * loss_ae + alpha * loss_cls
     loss_reg = tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, 'EasyNet'))
     train_op_ae = tf.train.AdamOptimizer().minimize(loss_ae)

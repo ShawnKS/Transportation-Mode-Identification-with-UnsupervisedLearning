@@ -30,7 +30,7 @@ initializer = tf.contrib.layers.xavier_initializer(uniform=True, seed=None, dtyp
 #initializer = tf.truncated_normal_initializer()
 
 #sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
-filename = '../Mode-codes-Revised/paper2_data_for_DL_kfold_dataset.pickle'
+filename = '/home/sxz/data/geolife_Data/paper2_data_for_DL_kfold_dataset_RL_augment.pickle'
 with open(filename, 'rb') as f:
     kfold_dataset, X_unlabeled = pickle.load(f)
 
@@ -163,15 +163,15 @@ def semi_supervised(input_latent, input_labeled, input_combined, true_label, alp
 
 def loss_acc_evaluation(Test_X, Test_Y, input, sess, loss_cls, accuracy_cls, true_label, k):
     metrics = []
-    for i in range(len(Test_X) // batch_size):
-        Test_X_batch = Test_X[i * batch_size:(i + 1) * batch_size]
-        Test_Y_batch = Test_Y[i * batch_size:(i + 1) * batch_size]
+    for i in range(len(Test_X) // len(Test_X)):
+        Test_X_batch = Test_X[i * len(Test_X):(i + 1) * len(Test_X)]
+        Test_Y_batch = Test_Y[i * len(Test_X):(i + 1) * len(Test_X)]
         loss_cls_, accuracy_cls_ = sess.run([loss_cls, accuracy_cls],
                                             feed_dict={input: Test_X_batch,
                                                        true_label: Test_Y_batch})
         metrics.append([loss_cls_, accuracy_cls_])
-    Test_X_batch = Test_X[(i + 1) * batch_size:]
-    Test_Y_batch = Test_Y[(i + 1) * batch_size:]
+    Test_X_batch = Test_X[(i + 1) * len(Test_X):]
+    Test_Y_batch = Test_Y[(i + 1) * len(Test_X):]
     if len(Test_X_batch) >= 1:
         loss_cls_, accuracy_cls_ = sess.run([loss_cls, accuracy_cls], feed_dict={input: Test_X_batch, true_label: Test_Y_batch})
         metrics.append([loss_cls_, accuracy_cls_])
@@ -197,10 +197,10 @@ def transfer_latent_space(X, latent_combined, sess, input_combined):
     latent_size = [len(X)] + latent_combined.get_shape().as_list()[1:]
     X_latent = np.zeros(latent_size)
     num_batches = len(X_latent) // batch_size
-    for i in range(num_batches):
-        X_latent[i*batch_size: (i + 1) * batch_size:] = sess.run(latent_combined,feed_dict={input_combined:X[i * batch_size: (i + 1) * batch_size]})
-    X_latent[(i + 1) * batch_size:] = sess.run(latent_combined,
-                                               feed_dict={input_combined: X[(i + 1) * batch_size:]})
+    for i in range(1):
+        X_latent[i*len(X_latent): (i + 1) * len(X_latent):] = sess.run(latent_combined,feed_dict={input_combined:X[i * len(X_latent): (i + 1) * len(X_latent)]})
+    X_latent[(i + 1) * len(X_latent):] = sess.run(latent_combined,
+                                               feed_dict={input_combined: X[(i + 1) * len(X_latent):]})
     return X_latent
 
 
@@ -333,14 +333,14 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter, epochs_ae=10, epochs
             val_loss.update({k: loss_val})
             val_accuracy.update({k: acc_val})
             print('====================================================')
-            saver.save(sess, "/Conv-Semi-TF-PS/" + str(prop), global_step=k)
+            saver.save(sess, "/home/sxz/cnv-TF/" + str(prop), global_step=k)
             if all([val_accuracy[k] < val_accuracy[k - 1], val_accuracy[k] < val_accuracy[k - 2]]):
                 break
         print("Val Accuracy Over Epochs: ", val_accuracy)
         print("Val loss Over Epochs: ", val_loss)
 
         max_acc = max(val_accuracy.items(), key=lambda k: k[1])[0]
-        save_path = "/Conv-Semi-TF-PS/" + str(prop) + '-' + str(max_acc)
+        save_path = "/home/sxz/cnv-TF/" + str(prop) + '-' + str(max_acc)
         saver.restore(sess, save_path)
 
         y_pred = prediction_prob(Test_X_latent, classifier_output, input_latent, sess)
@@ -377,7 +377,7 @@ def training_all_folds(label_proportions, num_filter):
         print('\n')
     return test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics
 
-test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(label_proportions=[0.05],
+test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(label_proportions=[0.1,0.25,0.5,0.75,1],
                                                   num_filter=[32, 32, 64, 64])
 a = 1
 
