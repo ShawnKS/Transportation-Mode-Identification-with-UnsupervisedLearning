@@ -635,7 +635,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                 # beta_val += 0.05
                 # 找到Max_accuracy
             print("Ensemble {}: Val_loss ae+cls Over Epochs {}: ".format(z, val_loss))
-            unsupervised_encoded.append(encode_AE_data(Test_X, latent, input_labeled, sess))
+            unsupervised_encoded.append(encode_AE_data(one_fold[0], latent, input_labeled, sess))
 
         # ave_class_posterior = sum(class_posterior) / len(class_posterior)
         # y_pred = np.argmax(ave_class_posterior, axis=1)
