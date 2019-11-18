@@ -18,10 +18,16 @@ from sklearn.metrics import accuracy_score, confusion_matrix, classification_rep
 x = np.ones((1, 2, 3))
 a = np.transpose(x, (1, 0, 2))
 
+filename = '/home/sxz/data/geolife_Data/e_Cross1.pickle'
+with open(filename, 'rb') as f:
+    Train_X, Train_Y,Test_X, Test_Y, Test_Y_ori = pickle.load(f)
+print(Train_X)
+print("aaaaaaaaaaaaaaaaaaaaaaa")
 filename = '/home/sxz/data/geolife_Data/Encoded_data_Cross.pickle'
 with open(filename, 'rb') as f:
     Train_X, Train_Y,Test_X, Test_Y, Test_Y_ori = pickle.load(f)
-
+print(Train_X)
+# sys.exit(0)
 times = 20
 acc_all = 0
 acc_w_all = 0

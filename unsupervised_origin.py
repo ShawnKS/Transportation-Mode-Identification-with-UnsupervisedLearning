@@ -28,7 +28,7 @@ y_pred = [0, 0, 2, 2, 0, 2]
 print(confusion_matrix(y_true, y_pred))
 
 # Training Settings
-batch_size = 100
+batch_size = 400
 latent_dim = 800
 change = 10
 units = 800  # num unit in the MLP hidden layer
@@ -47,7 +47,7 @@ initializer = tf.contrib.layers.xavier_initializer(uniform=True, seed=None, dtyp
 
 # Import the data
 #filename = '../Mode-codes-Revised/paper2_data_for_DL_train_val_test.pickle'
-filename = '/home/sxz/data/geolife_Data/paper2_data_for_DL_kfold_dataset_RL.pickle'
+filename = '/home/sxz/data/geolife_Data/paper2_data_for_DL_kfold_dataset_RL_augment.pickle'
 encode_len = 0
 with open(filename, 'rb') as f:
     kfold_dataset, X_unlabeled = pickle.load(f)
@@ -501,9 +501,8 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     #input_size是第一个维度之后的维度
     #np.shape() 和np.array().shape的功能差不多
     # Various sets of number of filters for ensemble. If choose one set, no ensemble is implemented.
-    num_filter_ae_cls_all = [[4, 4, 8, 8, 8, 8]]
+    num_filter_ae_cls_all = [[32, 32, 64, 64,128, 128]]
     unsupervised_encoded = []
-    test_encoded = []
 
     print("X_Comb : {}".format(np.shape(Train_X_Comb)))
     Train_X = np.concatenate((Train_X,Train_X_Comb),axis=0)
@@ -636,8 +635,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                 # beta_val += 0.05
                 # 找到Max_accuracy
             print("Ensemble {}: Val_loss ae+cls Over Epochs {}: ".format(z, val_loss))
-            unsupervised_encoded.append(encode_AE_data(one_fold[0], latent, input_labeled, sess))
-            test_encoded.append(encode_AE_data(one_fold[2], latent, input_labeled, sess))
+            unsupervised_encoded.append(encode_AE_data(Test_X, latent, input_labeled, sess))
 
         # ave_class_posterior = sum(class_posterior) / len(class_posterior)
         # y_pred = np.argmax(ave_class_posterior, axis=1)
@@ -683,7 +681,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
 
         # print(np.array(encode_means).shape)
 
-    return unsupervised_encoded[0], test_encoded[0], Train_Y_ori , Test_Y_ori 
+    return unsupervised_encoded[0], Test_Y_ori
 
 def training_all_folds(label_proportions, num_filter):
     accuracy = 0
@@ -692,47 +690,30 @@ def training_all_folds(label_proportions, num_filter):
         mean_std_acc = [[] for _ in range(len(label_proportions))]
         test_metrics_fold = [[] for _ in range(len(label_proportions))]
         mean_std_metrics = [[] for _ in range(len(label_proportions))]
-        Train_X_encode_all = []
-        Test_X_encode_all =[]
-        Train_X_label_all = []
-        Test_X_label_all = []
+        AE_encode_all = []
+        label_all = []
         for index, prop in enumerate(label_proportions):
-            kfold_dataset_encode = [[] for _ in range(5)]
             for i in range(len(kfold_dataset)):
-                Train_X_encode, Test_X_encode ,Train_label, Test_label = training(kfold_dataset[i], X_unlabeled=X_unlabeled, seed=7, prop=prop, num_filter_ae_cls_all=num_filter)
+                AE_encode, label = training(kfold_dataset[i], X_unlabeled=X_unlabeled, seed=7, prop=prop, num_filter_ae_cls_all=num_filter)
                 if(i == 0):
-                    Train_X_encode_all = Train_X_encode
-                    Train_label_all = Train_label
-                    Test_X_encode_all = Test_X_encode
-                    Test_label_all = Test_label
+                    AE_encode_all = AE_encode
+                    label_all = label
                 else:
-                    Train_X_encode_all = np.vstack((Train_X_encode_all,Train_X_encode))
-                    print(np.shape(Train_X_encode_all))
-                    Test_X_encode_all = np.vstack((Test_X_encode_all,Test_X_encode))
-                    print(np.shape(Test_X_encode_all))
-                    Train_label_all = np.hstack((Train_label_all,Train_label))
-                    print(np.shape(Train_label_all))
-                    Test_label_all = np.hstack((Test_label_all,Test_label))
-                    print(np.shape(Test_label_all)
-            for iii in range(len(kfold_dataset)):
-                kfold_dataset_encode[iii].append(Train_X_encode_all[iii])
-                kfold_dataset_encode[iii].append(Train_label_all[iii])
-                kfold_dataset_encode[iii].append(Test_X_encode_all[iii])
-                kfold_dataset_encode[iii].append(Test_label_all[iii])
-                kfold_dataset_encode[iii].append(kfold_dataset[iii][4])
-            print(kfold_dataset_encode)
-            print(np.shape(kfold_dataset_encode))
-            for i in range(5):
-                print(np.shape(kfold_dataset_encode[0][i]))
-            sys.exit(0)
+                    AE_encode_all = np.vstack((AE_encode_all,AE_encode))
+                    label_all = np.hstack((label_all,label))
+            print(AE_encode_all)
+            print(np.array(AE_encode_all).shape)
+            print(label_all)
+            print(np.shape(label_all))
+            # sys.exit(0)
             with open('/home/sxz/data/geolife_Data/Encoded_data.pickle', 'wb') as f:
-                pickle.dump([Train_X_encode_all, label_all], f)
+                pickle.dump([AE_encode_all, label_all], f)
             with open('/home/sxz/data/geolife_Data/Encoded_data.pickle', 'rb') as f:
                 a1 , b1 = pickle.load(f)
             print(np.shape(a1))
             print(np.shape(b1))
             sys.exit(0)
-            # Train_X_encode_all.tofile("encodeAE.bin")
+            # AE_encode_all.tofile("encodeAE.bin")
             # label_all.tofile("label.bin")
             # encode_ = np.fromfile("encodeAE.bin",dtype=np.float32)
             encode_ = encode_.reshape(encode_len,2)
@@ -794,4 +775,3 @@ current = time.clock()
 unsupervised_encoded = training_all_folds(
     label_proportions=[0.15], num_filter=[32, 32, 64, 64])
 print("time used:{}".format(time.clock() - current))
-
