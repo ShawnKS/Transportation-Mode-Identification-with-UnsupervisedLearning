@@ -47,7 +47,7 @@ initializer = tf.contrib.layers.xavier_initializer(uniform=True, seed=None, dtyp
 
 # Import the data
 #filename = '../Mode-codes-Revised/paper2_data_for_DL_train_val_test.pickle'
-filename = '/home/sxz/data/geolife_Data/paper2_data_for_DL_kfold_dataset_RL_augment.pickle'
+filename = '/home/sxz/data/geolife_Data/paper2_data_for_DL_kfold_dataset_RL.pickle'
 encode_len = 0
 with open(filename, 'rb') as f:
     kfold_dataset, X_unlabeled = pickle.load(f)
@@ -422,7 +422,7 @@ def train_val_split(Train_X, Train_Y_ori):
         # print(label_index)
         # print(label_index)
         # print(label_index[:round(0.1*len(label_index))])
-        #取前1%
+        #取前10%
         val_index.append(label_index[:round(0.1*len(label_index))])
     print(val_index)
     val_index = np.hstack(tuple([label for label in val_index]))
@@ -451,20 +451,13 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     # ori means its classification
     random.seed(seed)
     np.random.seed(seed)
-    random_sample = np.random.choice(len(Train_X), size=round(333), replace=False, p=None)
+    random_sample = np.random.choice(len(Train_X), size=round(len(Train_X)), replace=False, p=None)
     print('random_sample')
     print(random_sample)
     print(Train_X)
     Train_X1 = Train_X[random_sample]
 
     # 只取labeled_data中的一半做训练 通过改变size可以改变这个训练集的比例
-
-    #This random_sample generate a (220,) matrix which will random make a 
-    #(220,1,248,4)matrix from (441,1,248,4) if we use the statement A = A[random_sample]
-
-    # print(np.array(Train_X1).shape)
-    # print(np.array(random_sample).shape)
-
     Train_Y_ori = Train_Y_ori[random_sample]
     #now it's only 220x
     #将验证集从训练集中抽出来
@@ -490,7 +483,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     # 这里我人为改少了参与训练数据的比例，其中label data 300个 unlabel data 29700个(其实根本就是混淆的)
     # 因为训练的时候loss_function完全与label无关(无mlp,只做ae),所以讲道理的话应该是与是否label无关的
     # 出于实验设计暂时还是先这样拼接 混着一部分label data进行训练吧
-    random_sample_unlabel = np.random.choice(len(X_unlabeled), size=round(29700), replace=False, p=None)
+    random_sample_unlabel = np.random.choice(len(X_unlabeled), size=round(len(X_unlabeled)), replace=False, p=None)
     random_sample = np.random.choice(len(X_unlabeled), size=round(prop * len(X_unlabeled)), replace=False, p=None)
 
     # 通过改变prop来改变使用Unlabeled data的比例
@@ -508,13 +501,12 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     #input_size是第一个维度之后的维度
     #np.shape() 和np.array().shape的功能差不多
     # Various sets of number of filters for ensemble. If choose one set, no ensemble is implemented.
-    num_filter_ae_cls_all = [[32, 32], [32, 32, 64], [32, 32, 64, 64], [32, 32, 64, 64, 128],
-                             [32, 32, 64, 64, 128, 128], [32, 32, 64, 64, 128, 128], [32, 32, 64, 64, 128, 128]]
-    num_filter_ae_cls_all = [[32, 32, 64, 64, 128, 128]]
+    num_filter_ae_cls_all = [[4, 4, 8, 8, 8, 8]]
     unsupervised_encoded = []
 
     print("X_Comb : {}".format(np.shape(Train_X_Comb)))
     Train_X = np.concatenate((Train_X,Train_X_Comb),axis=0)
+    Train_X = Train_X_Comb
     # 拼成30000个点(30000 × 1 × 248 × 4)
     # 其中300个label data , 29700个unlabel data
     # print(np.shape(Train_X))

@@ -22,6 +22,7 @@ new_channel = 4
 # new_channel = 4
 min_percentile = 0
 max_percentile = 100
+thresh = 1
 
 
 def take_speed_percentile(trip, min_percentile, max_percentile):
@@ -58,26 +59,26 @@ def trip_to_fixed_length(trip_motion_all_user, min_threshold, max_threshold, min
             elif trip_length >= max_threshold:
                     quotient = trip_length // max_threshold
                     for i in range(10*quotient):
-                        trip_truncated = trip[:, int(0.1*i * max_threshold):int((0.1*i + 1) * max_threshold)]
+                        trip_truncated = trip[:, int(thresh*i * max_threshold):int((thresh*i + 1) * max_threshold)]
                         # 如果trip的length大于所设置的max_threshold，对其进行切分
                         # 这里因为小数点被乘出来了要小心越界
                         if all([np.sum(trip_truncated[0, :]) >= min_distance, np.sum(trip_truncated[1, :]) >= min_time
-                                , int((0.1*i + 1) * max_threshold) <= trip_length ]):
+                                , int((thresh*i + 1) * max_threshold) <= trip_length ]):
                             total_input.append(trip_truncated)
-                            print(int(0.1*i*max_threshold))
-                            print(int((0.1*i+1)*max_threshold))
+                            print(int(thresh*i*max_threshold))
+                            print(int((thresh*i+1)*max_threshold))
                             print("trip_truncated: {}".format(np.array(trip_truncated).shape))
                             print("total_input: {}".format(np.array(total_input).shape))
                             total_label.append(mode)
-                    remain_trip = trip[:, int((0.1*i) * max_threshold):]
+                    remain_trip = trip[:, int((thresh*i) * max_threshold):]
                     print("i:{}".format(i))
                     print("quotient: {}".format(quotient))
                     print("remain_trip: {}".format(len(remain_trip)))
-                    print("(0.1*i+1)*max_threshold: {}".format(int((0.1*i+1)*max_threshold)))
+                    print("(thresh*i+1)*max_threshold: {}".format(int((thresh*i+1)*max_threshold)))
                     print("trip_length: {}".format(trip_length))
                     if all([(trip_length % max_threshold) > min_threshold, np.sum(remain_trip[0, :]) >= min_distance,
-                            np.sum(remain_trip[1, :]) >= min_time, int((0.1*i+1) * max_threshold) >= trip_length]):
-                        trip_padded = np.pad(remain_trip, ((0, 0), (0, int((0.1*i+1) * max_threshold - trip_length ) )),
+                            np.sum(remain_trip[1, :]) >= min_time, int((thresh*i+1) * max_threshold) >= trip_length]):
+                        trip_padded = np.pad(remain_trip, ((0, 0), (0, int((thresh*i+1) * max_threshold - trip_length ) )),
                                              'constant')
                                             #  切到最后一个进行补0
                         print(np.array(trip_padded).shape)
@@ -99,14 +100,14 @@ def trip_to_fixed_length(trip_motion_all_user, min_threshold, max_threshold, min
             elif trip_length >= max_threshold:
                 quotient = trip_length // max_threshold
                 for i in range(10*quotient):
-                    trip_truncated = trip[:, int(0.1 * i * max_threshold):int((0.1*i + 1) * max_threshold)]
+                    trip_truncated = trip[:, int(thresh * i * max_threshold):int((thresh*i + 1) * max_threshold)]
                     if all([np.sum(trip_truncated[0, :]) >= min_distance, np.sum(trip_truncated[1, :]) >= min_time
-                    , int((0.1*i + 1) * max_threshold) <= trip_length]):
+                    , int((thresh*i + 1) * max_threshold) <= trip_length]):
                         total_input.append(trip_truncated)
-                remain_trip = trip[:, int((0.1*i + 1) * max_threshold):]
+                remain_trip = trip[:, int((thresh*i + 1) * max_threshold):]
                 if all([trip_length % max_threshold > min_threshold, np.sum(remain_trip[0, :]) >= min_distance,
-                        np.sum(remain_trip[1, :]) >= min_time, int((0.1*i+1) * max_threshold) >= trip_length ]):
-                    trip_padded = np.pad(remain_trip, ((0, 0), (0, int((0.1*i+1) * max_threshold - trip_length ) )),
+                        np.sum(remain_trip[1, :]) >= min_time, int((thresh*i+1) * max_threshold) >= trip_length ]):
+                    trip_padded = np.pad(remain_trip, ((0, 0), (0, int((thresh*i+1) * max_threshold - trip_length ) )),
                                          'constant')
                     total_input.append(trip_padded)
                     i = 10*quotient + 10
@@ -124,15 +125,21 @@ X_unlabeled = trip_to_fixed_length(trip_motion_all_user_wo_label, min_threshold=
 
 def change_to_new_channel(input):
     # 做K折交
-    input1 = input[:, 0:1, :]
-    input2 = input[:, 3:6, :]
-    input = np.concatenate((input1, input2), axis=1)
+    # input1 = input[:, 0:1, :]
+    # input2 = input[:, 3:6, :]
+    input = input[:, 3:7, :]
+    # input = np.concatenate((input1, input2), axis=1)
     total_input_new = np.zeros((len(input), 1, max_threshold, new_channel))
     for i in range(len(input)):
         total_input_new[i, 0, :, 0] = input[i, 0, :]
         total_input_new[i, 0, :, 1] = input[i, 1, :]
         total_input_new[i, 0, :, 2] = input[i, 2, :]
         total_input_new[i, 0, :, 3] = input[i, 3, :]
+        # print(input)
+        # print(np.shape(input))
+        # print(input[i])
+        # print(np.shape(input[i]))
+        # sys.exit(0)
         #total_input_new[i, 0, :, 4] = input[i, 4, :]
         #total_input_new[i, 0, :, 5] = input[i, 5, :]
 
@@ -191,5 +198,5 @@ a = len(np.where(kfold_dataset[4][1]==0)[0])/len(kfold_dataset[4][1])
 
 b = len(np.where(kfold_dataset[4][4]==0)[0])/len(kfold_dataset[4][4])
 
-with open('/home/sxz/data/geolife_Data/paper2_data_for_DL_kfold_dataset_RL_augment.pickle', 'wb') as f:
+with open('/home/sxz/data/geolife_Data/paper2_data_for_DL_kfold_dataset_RL_SAJB.pickle', 'wb') as f:
     pickle.dump([kfold_dataset, X_unlabeled], f)

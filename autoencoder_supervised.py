@@ -18,7 +18,7 @@ from sklearn.metrics import accuracy_score, confusion_matrix, classification_rep
 x = np.ones((1, 2, 3))
 a = np.transpose(x, (1, 0, 2))
 
-filename = '/home/sxz/data/geolife_Data/Origin_data_Cross.pickle'
+filename = '/home/sxz/data/geolife_Data/Encoded_data_Cross.pickle'
 with open(filename, 'rb') as f:
     Train_X, Train_Y,Test_X, Test_Y, Test_Y_ori = pickle.load(f)
 
@@ -58,7 +58,7 @@ for i in range(times):
     # Model and Compile
     model = Sequential()
     activ = 'relu'
-    model.add(Conv2D(32, (1, 3), strides=(1, 1), padding='same', activation=activ, input_shape=(1, 248, 4)))
+    model.add(Conv2D(32, (1, 3), strides=(1, 1), padding='same', activation=activ, input_shape=(1, 31, 128)))
     A = model.output_shape
     print(A)
     model.add(Conv2D(32, (1, 3), strides=(1, 1), padding='same', activation=activ))

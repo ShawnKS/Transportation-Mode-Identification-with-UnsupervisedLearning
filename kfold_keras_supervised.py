@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import numpy as np
 import sys
@@ -21,12 +21,12 @@ a = np.transpose(x, (1, 0, 2))
 # filename = '/home/sxz/data/geolife_Data/Origin_data_Cross.pickle'
 # with open(filename, 'rb') as f:
 #     Train_X1, Train_Y1,Test_X1, Test_Y1, Test_Y_ori1 = pickle.load(f)
-filename = '/home/sxz/data/geolife_Data/paper2_data_for_DL_kfold_dataset_RL.pickle'
+filename = '/home/sxz/data/geolife_Data/paper2_data_for_DL_kfold_dataset_RL_SAJB.pickle'
 with open(filename, 'rb') as f:
     kfold_dataset1, label1 = pickle.load(f)
 
 
-filename = '/home/sxz/data/geolife_Data/paper2_data_for_DL_kfold_dataset_RL_augment.pickle'
+filename = '/home/sxz/data/geolife_Data/paper2_data_for_DL_kfold_dataset_RL_SAJB.pickle'
 with open(filename, 'rb') as f:
     kfold_dataset, label = pickle.load(f)
 
@@ -44,7 +44,7 @@ for T in range(times):
 
 
         # Training and test set for GPS segments
-        prop = 0.01
+        prop = 0.5
         random.seed(7)
         np.random.seed(7)
         tf.set_random_seed(7)

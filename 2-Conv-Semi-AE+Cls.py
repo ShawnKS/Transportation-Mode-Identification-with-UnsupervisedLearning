@@ -63,14 +63,14 @@ def encoder_network(latent_dim, num_filter_ae_cls, input_combined, input_labeled
         with tf.variable_scope(scope_name, reuse=True, initializer=initializer):
             encoded_labeled = tf.layers.conv2d(inputs=encoded_labeled, activation=tf.nn.relu, filters=num_filter_ae_cls[i],
                                                name='conv_1', kernel_size=kernel_size, strides=strides, padding=padding)
-
+            print(encoded_labeled)
         if i % 2 != 0:
             encoded_combined = tf.layers.max_pooling2d(encoded_combined, pool_size=pool_size,
                                                           strides=pool_size, name='pool')
+            print(encoded_labeled)
             encoded_labeled = tf.layers.max_pooling2d(encoded_labeled, pool_size=pool_size,
                                                           strides=pool_size, name='pool')
         layers_shape.append(encoded_combined.get_shape().as_list())
-
     layers_shape.append(encoded_combined.get_shape().as_list())
     latent_combined = encoded_combined
     latent_labeled = encoded_labeled
