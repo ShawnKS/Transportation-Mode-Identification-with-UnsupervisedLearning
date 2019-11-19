@@ -22,8 +22,10 @@ filename = '/home/sxz/data/geolife_Data/e_Cross1.pickle'
 with open(filename, 'rb') as f:
     Train_X, Train_Y,Test_X, Test_Y, Test_Y_ori = pickle.load(f)
 print(Train_X)
+# 这是表现差的
 print("aaaaaaaaaaaaaaaaaaaaaaa")
 filename = '/home/sxz/data/geolife_Data/Encoded_data_Cross.pickle'
+# 这是表现好的
 with open(filename, 'rb') as f:
     Train_X, Train_Y,Test_X, Test_Y, Test_Y_ori = pickle.load(f)
 print(Train_X)

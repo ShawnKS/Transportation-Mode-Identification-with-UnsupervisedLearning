@@ -682,9 +682,12 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
         # PCA part finished
 
         # print(np.array(encode_means).shape)
-
-    return unsupervised_encoded[0], test_encoded[0], Train_Y_ori , Test_Y_ori 
-
+    for i in range(5):
+        print(one_fold[i])
+    return unsupervised_encoded[0], test_encoded[0], one_fold[1] ,one_fold[4]  
+# one_fold[4]是test_y_ori(非hot)
+# one_fold[3]是test_y*(hot)
+# one_fold[1]是train_y_ori(非hot)
 def training_all_folds(label_proportions, num_filter):
     accuracy = 0
     for i in range(1):
@@ -692,43 +695,23 @@ def training_all_folds(label_proportions, num_filter):
         mean_std_acc = [[] for _ in range(len(label_proportions))]
         test_metrics_fold = [[] for _ in range(len(label_proportions))]
         mean_std_metrics = [[] for _ in range(len(label_proportions))]
-        Train_X_encode_all = []
-        Test_X_encode_all =[]
-        Train_X_label_all = []
-        Test_X_label_all = []
         for index, prop in enumerate(label_proportions):
             kfold_dataset_encode = [[] for _ in range(5)]
             for i in range(len(kfold_dataset)):
                 Train_X_encode, Test_X_encode ,Train_label, Test_label = training(kfold_dataset[i], X_unlabeled=X_unlabeled, seed=7, prop=prop, num_filter_ae_cls_all=num_filter)
-                if(i == 0):
-                    Train_X_encode_all = Train_X_encode
-                    Train_label_all = Train_label
-                    Test_X_encode_all = Test_X_encode
-                    Test_label_all = Test_label
-                else:
-                    Train_X_encode_all = np.vstack((Train_X_encode_all,Train_X_encode))
-                    print(np.shape(Train_X_encode_all))
-                    Test_X_encode_all = np.vstack((Test_X_encode_all,Test_X_encode))
-                    print(np.shape(Test_X_encode_all))
-                    Train_label_all = np.hstack((Train_label_all,Train_label))
-                    print(np.shape(Train_label_all))
-                    Test_label_all = np.hstack((Test_label_all,Test_label))
-                    print(np.shape(Test_label_all)
-            for iii in range(len(kfold_dataset)):
-                kfold_dataset_encode[iii].append(Train_X_encode_all[iii])
-                kfold_dataset_encode[iii].append(Train_label_all[iii])
-                kfold_dataset_encode[iii].append(Test_X_encode_all[iii])
-                kfold_dataset_encode[iii].append(Test_label_all[iii])
-                kfold_dataset_encode[iii].append(kfold_dataset[iii][4])
+                kfold_dataset_encode[i].append(Train_X_encode)
+                kfold_dataset_encode[i].append(Train_label)
+                kfold_dataset_encode[i].append(Test_X_encode)
+                kfold_dataset_encode[i].append(Test_label)
             print(kfold_dataset_encode)
             print(np.shape(kfold_dataset_encode))
-            for i in range(5):
+            for i in range(4):
+                print(i)
                 print(np.shape(kfold_dataset_encode[0][i]))
-            sys.exit(0)
-            with open('/home/sxz/data/geolife_Data/Encoded_data.pickle', 'wb') as f:
-                pickle.dump([Train_X_encode_all, label_all], f)
-            with open('/home/sxz/data/geolife_Data/Encoded_data.pickle', 'rb') as f:
-                a1 , b1 = pickle.load(f)
+            with open('/home/sxz/data/geolife_Data/Encoded_data_noaug.pickle', 'wb') as f:
+                pickle.dump([kfold_dataset_encode], f)
+            with open('/home/sxz/data/geolife_Data/Encoded_data_noaug.pickle', 'rb') as f:
+                a1  = pickle.load(f)
             print(np.shape(a1))
             print(np.shape(b1))
             sys.exit(0)
