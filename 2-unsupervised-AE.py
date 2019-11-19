@@ -21,6 +21,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import keras
+import math
 import sys
 
 y_true = [2, 0, 2, 2, 0, 1]
@@ -134,11 +135,10 @@ def encoder_network(latent_dim, num_filter_ae_cls, input_labeled):
 # # Decoder Network
 
 
-def decoder_network(latent, input_size, kernel_size, padding, activation):
+def decoder_network(latent, input_size, kernel_size, padding, activation,num_filter_ae_cls):
     decoded_combined = latent
     #num_filter_ae_cls ae_classifier的通道(filter数量即通道数量)
     num_filter_ = num_filter_ae_cls[::-1]
-    print(num_filter_ae_cls)
     #[32,32,64,64,128,128]
     print(num_filter_ae_cls[::-1])
     #[::-1] 倒序 [128, 128, 64, 64, 32, 32]
@@ -245,7 +245,8 @@ def classifier_mlp(latent_labeled, num_class, num_filter_cls, num_dense):
 def unsupervised(input_labeled, num_class , latent_dim, num_filter_ae_cls , num_dense , input_size):
     latent , layers_shape = encoder_network(latent_dim = latent_dim, num_filter_ae_cls = num_filter_ae_cls,
                                             input_labeled = input_labeled)
-    decoded_output = decoder_network(latent = latent, input_size = input_size, kernel_size= kernel_size, activation=activation, padding=padding)
+    decoded_output = decoder_network(latent = latent, input_size = input_size, kernel_size= kernel_size,
+                                        num_filter_ae_cls=num_filter_ae_cls, activation=activation, padding=padding)
 
     # classifier_output, dense = classifier_mlp(latent = latent, num_class , num_filter_cls = num_filter_cls, num_dense = num_dense)
     loss_AE_label =tf.reduce_mean(tf.square(input_labeled - decoded_output))
@@ -265,7 +266,8 @@ def semi_supervised(input_labeled, input_combined, true_label, alpha, beta, num_
     latent_combined, latent_labeled, layers_shape = encoder_network(latent_dim=latent_dim, num_filter_ae_cls=num_filter_ae_cls,
                                                                     input_combined=input_combined, input_labeled=input_labeled)
     #得到通过神经网络的Latent_combined和latent_labeled以及append出来的layers_shape
-    decoded_output = decoder_network(latent_combined = latent_combined, input_size=input_size, kernel_size=kernel_size, activation=activation, padding=padding)
+    decoded_output = decoder_network(latent_combined = latent_combined, input_size=input_size, kernel_size=kernel_size, activation=activation,
+                                         padding=padding)
     #得到decodeNet的输出
     classifier_output, dense = classifier_mlp(latent_labeled, num_class, num_filter_cls=num_filter_cls, num_dense=num_dense)
     #classifier_output = classifier_cnn(latent_labeled, num_filter=num_filter)
@@ -369,12 +371,13 @@ def loss_acc_evaluation(Test_X, Test_Y, loss_AE_label, input_labeled, k, sess):
 
 def encode_AE_data(Test_X, latent, input_labeled, sess):
     encode_result = []
-    for i in range(len(Test_X) // batch_size):
-        Test_X_batch = Test_X[i * batch_size:(i + 1) * batch_size]
-        print(np.array(Test_X_batch).shape)
+    batch_s = len(Test_X)
+    for i in range(len(Test_X) // batch_s):
+        Test_X_batch = Test_X[i * batch_s:(i + 1) * batch_s]
+        # print(np.array(Test_X_batch).shape)
         encode_result.append(sess.run(tf.nn.softmax(latent), feed_dict={input_labeled: Test_X_batch}))
-        print(np.array(encode_result).shape)
-    Test_X_batch = Test_X[(i + 1) * batch_size:]
+        # print(np.array(encode_result).shape)
+    Test_X_batch = Test_X[(i + 1) * batch_s:]
     encode_result.append(sess.run(tf.nn.softmax(latent), feed_dict={input_labeled: Test_X_batch}))
     encode_result = np.vstack(tuple(encode_result))
     return encode_result
@@ -444,7 +447,7 @@ def train_val_split(Train_X, Train_Y_ori):
     return Train_X, Train_Y, Train_Y_ori, Val_X, Val_Y, Val_Y_ori
 
 
-def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae_cls=20):
+def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae_cls=2):
     #each time transfer a dataset_fold to here with All unlabeled data
     Train_X = one_fold[0]
     Train_Y_ori = one_fold[1]
@@ -501,7 +504,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     #input_size是第一个维度之后的维度
     #np.shape() 和np.array().shape的功能差不多
     # Various sets of number of filters for ensemble. If choose one set, no ensemble is implemented.
-    num_filter_ae_cls_all = [[4, 4, 8, 8, 8, 8]]
+    num_filter_ae_cls_all = [[4,4,8,8,16,16]]
     unsupervised_encoded = []
     test_encoded = []
 
@@ -534,7 +537,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
             
             sess.run(tf.global_variables_initializer())
             #初始化
-            saver = tf.train.Saver(max_to_keep=20)
+            saver = tf.train.Saver(max_to_keep=80)
             #模型保存
             # Train_X, Train_Y = ensemble_train_set(orig_Train_X, orig_Train_Y)
             val_accuracy = {-2: 0, -1: 0}
@@ -636,8 +639,130 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                 # beta_val += 0.05
                 # 找到Max_accuracy
             print("Ensemble {}: Val_loss ae+cls Over Epochs {}: ".format(z, val_loss))
-            unsupervised_encoded.append(encode_AE_data(one_fold[0], latent, input_labeled, sess))
-            test_encoded.append(encode_AE_data(one_fold[2], latent, input_labeled, sess))
+
+            select_train_sampleY = np.zeros((5,))
+            this_fold_trainX = one_fold[0]
+            this_fold_trainY = one_fold[1]
+            for sel_num in range(5):
+                select_train_sample_index = this_fold_trainY[this_fold_trainY == sel_num ]
+                random_sample = np.random.choice(len(select_train_sample_index), size=round(1), replace=False, p=None)
+                if(sel_num == 0):
+                    select_train_sampleX = this_fold_trainX[random_sample]
+                else:
+                    select_train_sampleX = np.concatenate((select_train_sampleX, (this_fold_trainX[random_sample])))
+                select_train_sampleY[sel_num] = (this_fold_trainY[random_sample])
+            # select_train_sampleY = select_train_sampleY.reshape(len(select_train_sampleY),1 ,248 ,4)
+            
+            
+            random_sample_Un = np.random.choice(len(X_unlabeled), size=round(800), replace=False, p=None)
+
+            select_unlabel_sample = X_unlabeled[random_sample_Un]
+            
+            encode_select_trainsampleX = encode_AE_data(select_train_sampleX, latent, input_labeled, sess)
+            encode_unlabelsample = encode_AE_data(select_unlabel_sample, latent, input_labeled, sess)
+            print(encode_select_trainsampleX)
+            print(encode_unlabelsample)
+            print(np.shape(encode_select_trainsampleX))
+            print(np.shape(encode_unlabelsample))
+
+            pca = PCA(n_components = 2)
+            encode_select_trainsampleX = encode_select_trainsampleX.reshape(len(encode_select_trainsampleX),len(encode_select_trainsampleX[0][0])*len(encode_select_trainsampleX[0][0][0]))
+            label_pca = pca.fit_transform(encode_select_trainsampleX)
+            encode_unlabelsample = encode_unlabelsample.reshape(len(encode_unlabelsample),len(encode_unlabelsample[0][0])*len(encode_unlabelsample[0][0][0]))
+            unlabel_pca = pca.fit_transform(encode_unlabelsample)
+            label_pca_ = [[label_pca[:,0][i],label_pca[:,1][i]] for i in range(len(label_pca[:,0])) ]
+            unlabel_pca_ = [[unlabel_pca[:,0][i], unlabel_pca[:,1][i]] for i in range(len(unlabel_pca[:,0]))]
+            print(np.shape(unlabel_pca_))
+            print(np.shape(label_pca_))
+
+            choose_M = label_pca_
+            unchoose_M = unlabel_pca_
+            pseudo_label = []
+            unlabel_index = []
+            origin_index = []
+            count_ = 0
+            for an in range(5):
+                pseudo_label.append(an)
+            print(pseudo_label)
+
+
+            for nn in range(11):
+                if(nn == 0):
+                    spread_num = 5
+                else:
+                    spread_num = 10
+                distance_M = np.zeros((len(choose_M), len(unchoose_M)))
+                for m in range(len(choose_M)):
+                    for n in range(len(unchoose_M)):
+                        distance_M[m][n] = math.sqrt(math.pow(choose_M[m][0] - unchoose_M[n][0],2) +math.pow(choose_M[m][1] - unchoose_M[n][1],2))
+                        # 计算距离矩阵
+                random_index_select = np.random.choice(len(choose_M),size=round(spread_num),replace=False,p=None)
+                print(distance_M)
+                print(choose_M)
+                # unchoose_M = np.delete(unchoose_M, [0], axis=0)
+                # print(np.shape(unchoose_M))
+                # print(random_index_select)
+                # sys.exit(0)
+
+                # 随机选择5/10个点进行扩展
+                # print(unchoose_M)
+                # print(distance_M)
+                print(distance_M)
+                print("before expand nodes: {} ".format(len(choose_M)))
+                for hh in range(len(random_index_select)):
+#                     print(hh)
+#                     print(choose_M)
+                    # print(len(choose_M))
+                    # print(choose_M)
+#                     print(distance_M[random_index_select[hh]])
+#                     print( min(distance_M[random_index_select[hh]]) )
+                    print( min(distance_M[random_index_select[hh]]) )
+
+                    min_index = np.where((distance_M[random_index_select[hh]]==min(distance_M[random_index_select[hh]])))[0]
+                    min_index = min_index[0]
+                    print(min_index)
+                    choose_M.append( unchoose_M[ min_index ] )
+                    # 问题在于更新之后，新加入的点在下一次扩展的时候被重复考虑，并且新加入的点于自己计算会变成0
+                    
+
+                        # 计算距离更新之后那部分的矩阵
+                    # print(unchoose_M[428])
+                    # unchoose_M[428] = [100,100]
+                    # print(unchoose_M[428])
+                    # sys.exit(0)
+
+                    # 将选中点加入选择矩阵
+                    # unchoose_M = np.delete(unchoose_M,int(np.where(( distance_M[random_index_select[hh]]==min(distance_M[random_index_select[hh]])))),)
+                    # 因为要记录索引,就不直接从矩阵里删除了
+                    pseudo_label.append(pseudo_label[random_index_select[hh]])
+                    unlabel_index.append(np.where(( distance_M[random_index_select] == min(distance_M[random_index_select[hh]])))[0])
+
+                    origin_index.append( random_sample_Un[np.where(( distance_M[random_index_select[hh]] == min(distance_M[random_index_select[hh]])))[0]][0] )
+                    # 这里获得原始的index，可以用来最后拼接训练矩阵
+            
+            print(origin_index)
+            X_unlabel_pseudo = X_unlabeled[origin_index]
+            print(X_unlabel_pseudo)
+#             print(np.shape(select_train_sampleX))
+            print(np.shape(X_unlabel_pseudo))
+            X_combined = np.concatenate((select_train_sampleX, X_unlabel_pseudo))
+            print(np.shape(X_combined))
+            Y_combined = pseudo_label
+            print(np.shape(Y_combined))
+            print(np.shape(choose_M))
+            X_combined = np.array(X_combined)
+            Y_combined = np.array(Y_combined)
+            choose_M = np.array(choose_M)
+            with open('/home/sxz/data/geolife_Data/pseudo_data1.pickle', 'wb') as f:
+                pickle.dump([X_combined, Y_combined ,choose_M], f)
+            
+            sys.exit(0)     
+        
+            # taggggg
+
+
+#             unsupervised_encoded.append(encode_AE_data(one_fold[0], latent, input_labeled, sess))
+#             test_encoded.append(encode_AE_data(one_fold[2], latent, input_labeled, sess))
 
         # ave_class_posterior = sum(class_posterior) / len(class_posterior)
         # y_pred = np.argmax(ave_class_posterior, axis=1)
@@ -653,9 +778,9 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
         # print(np.shape(unsupervised_encoded))
 
         # PCA part
-        print(unsupervised_encoded)
-        print(np.shape(unsupervised_encoded))
-        print(np.shape(unsupervised_encoded[0]))
+#         print(unsupervised_encoded)
+#         print(np.shape(unsupervised_encoded))
+#         print(np.shape(unsupervised_encoded[0]))
         # sys.exit(0)
         # PCA_codearray = unsupervised_encoded[0].reshape(len(Test_X),3968)
         # print(PCA_codearray)
@@ -682,9 +807,9 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
         # PCA part finished
 
         # print(np.array(encode_means).shape)
-    for i in range(5):
-        print(one_fold[i])
-    return unsupervised_encoded[0], test_encoded[0], one_fold[1] ,one_fold[4]  
+#     for i in range(5):
+#         print(one_fold[i])
+#     return unsupervised_encoded[0], test_encoded[0], one_fold[1] ,one_fold[4]  
 # one_fold[4]是test_y_ori(非hot)
 # one_fold[3]是test_y*(hot)
 # one_fold[1]是train_y_ori(非hot)
@@ -697,7 +822,7 @@ def training_all_folds(label_proportions, num_filter):
         mean_std_metrics = [[] for _ in range(len(label_proportions))]
         for index, prop in enumerate(label_proportions):
             kfold_dataset_encode = [[] for _ in range(5)]
-            for i in range(len(kfold_dataset)):
+            for i in range(len(kfold_dataset)- 4):
                 Train_X_encode, Test_X_encode ,Train_label, Test_label = training(kfold_dataset[i], X_unlabeled=X_unlabeled, seed=7, prop=prop, num_filter_ae_cls_all=num_filter)
                 kfold_dataset_encode[i].append(Train_X_encode)
                 kfold_dataset_encode[i].append(Train_label)
