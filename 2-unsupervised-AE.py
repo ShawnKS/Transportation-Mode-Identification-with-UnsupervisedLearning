@@ -721,11 +721,28 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                     min_index = np.where((distance_M[random_index_select[hh]]==min(distance_M[random_index_select[hh]])))[0]
                     min_index = min_index[0]
                     print(min_index)
+                    new = unchoose_M[ min_index ]
                     choose_M.append( unchoose_M[ min_index ] )
-                    # 问题在于更新之后，新加入的点在下一次扩展的时候被重复考虑，并且新加入的点于自己计算会变成0
-                    
-
+                    # 问题在于更新之后，新加入的点在下一次扩展的时候可能会被重复考虑，并且新加入的点于自己计算会变成0
+                    # 也就是加入点之后距离表不能及时更新,如果全部更新又过于compentation expensive
+                    # 还是得直接删除那一列，并且在unchoose_M里面删除该数，之后通过坐标值和unlabel_pca_对比 得到在unlabel_pca_里的索引
+                    # 再通过unlabel_pca_里的索引，映射到random_sample_Un里得到原始值的索引index 再X_unlabel[index]得到原始X_unlabel
+                    # 删掉加入的列
+                    unchoose_M = np.delete(unchoose_M,min_index,0)
+                    distance_M = np.delete(distance_M,min_index,1)
+                    new_dis = np.zeros((1, len(unchoose_M)))
+                    print(min_index)
+                    print(unchoose_M)
+                    print(new)
+                    print(np.shape(new))
+                    for n in range(len(unchoose_M)):
+                        new_dis[n] = math.sqrt(math.pow(new[0] - unchoose_M[n][0],2) +math.pow(new[1] - unchoose_M[n][1],2))
+                    print(new_dis)
+                    print(np.shape(distance_M))
+                    print(np.shape(new_dis))
+                    distance_M = np.append((distance_M, new_dis),axis=0)
                         # 计算距离更新之后那部分的矩阵
+                        # http://whatbeg.com/2019/06/05/gpudriverupdate.html
                     # print(unchoose_M[428])
                     # unchoose_M[428] = [100,100]
                     # print(unchoose_M[428])
@@ -735,9 +752,9 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                     # unchoose_M = np.delete(unchoose_M,int(np.where(( distance_M[random_index_select[hh]]==min(distance_M[random_index_select[hh]])))),)
                     # 因为要记录索引,就不直接从矩阵里删除了
                     pseudo_label.append(pseudo_label[random_index_select[hh]])
-                    unlabel_index.append(np.where(( distance_M[random_index_select] == min(distance_M[random_index_select[hh]])))[0])
+                    unlabel_index.append(np.where(( unlabel_pca_ == new ))[0])
 
-                    origin_index.append( random_sample_Un[np.where(( distance_M[random_index_select[hh]] == min(distance_M[random_index_select[hh]])))[0]][0] )
+                    origin_index.append( random_sample_Un[np.where(( unlabel_pca_ == new ))])
                     # 这里获得原始的index，可以用来最后拼接训练矩阵
             
             print(origin_index)
