@@ -39,8 +39,8 @@ Train_Y = np.zeros((len(Train_Y1),5))
 for i in range(len(Train_Y1)):
     Train_Y[i][Train_Y1[i]] = 1
 print(Train_Y)
-# Train_X = Train_X[:5]
-# Train_Y = Train_Y[:5]
+Train_X = Train_X[:10]
+Train_Y = Train_Y[:10]
 times = 2
 acc_all = 0
 acc_w_all = 0

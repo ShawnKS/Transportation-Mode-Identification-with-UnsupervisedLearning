@@ -29,7 +29,13 @@ with open(filename, 'rb') as f:
 filename = '/home/sxz/data/geolife_Data/paper2_data_for_DL_kfold_dataset_RL_SAJB.pickle'
 with open(filename, 'rb') as f:
     kfold_dataset, label = pickle.load(f)
-
+# print(kfold_dataset[0][1])
+# print(len(kfold_dataset[0][1][kfold_dataset[0][1]==0]))
+# print(len(kfold_dataset[0][1][kfold_dataset[0][1]==1]))
+# print(len(kfold_dataset[0][1][kfold_dataset[0][1]==2]))
+# print(len(kfold_dataset[0][1][kfold_dataset[0][1]==3]))
+# print(len(kfold_dataset[0][1][kfold_dataset[0][1]==4]))
+# sys.exit(0)
 times = 5
 acc_all = 0
 acc_w_all = 0
