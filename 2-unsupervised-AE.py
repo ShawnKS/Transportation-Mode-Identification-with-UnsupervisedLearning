@@ -447,7 +447,7 @@ def train_val_split(Train_X, Train_Y_ori):
     return Train_X, Train_Y, Train_Y_ori, Val_X, Val_Y, Val_Y_ori
 
 
-def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae_cls=2):
+def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae_cls=1):
     #each time transfer a dataset_fold to here with All unlabeled data
     Train_X = one_fold[0]
     Train_Y_ori = one_fold[1]
@@ -504,7 +504,10 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     #input_size是第一个维度之后的维度
     #np.shape() 和np.array().shape的功能差不多
     # Various sets of number of filters for ensemble. If choose one set, no ensemble is implemented.
-    num_filter_ae_cls_all = [[4,4,8,8,16,16]]
+    num_filter_ae_cls_all = [[100, 100, 200, 200, 400, 400]]
+
+# herehere here here
+
     unsupervised_encoded = []
     test_encoded = []
 
@@ -646,15 +649,18 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
             for sel_num in range(5):
                 select_train_sample_index = this_fold_trainY[this_fold_trainY == sel_num ]
                 random_sample = np.random.choice(len(select_train_sample_index), size=round(1), replace=False, p=None)
+                # 这里只是在select_train_sample_index里面选出来了一个值
+                print(random_sample[0])
+                random_sample = select_train_sample_index[random_sample[0]]
                 if(sel_num == 0):
-                    select_train_sampleX = this_fold_trainX[random_sample]
+                    select_train_sampleX = [this_fold_trainX[random_sample]]
                 else:
-                    select_train_sampleX = np.concatenate((select_train_sampleX, (this_fold_trainX[random_sample])))
-                select_train_sampleY[sel_num] = (this_fold_trainY[random_sample])
+                    select_train_sampleX = np.concatenate((select_train_sampleX, [this_fold_trainX[random_sample]] ))
+                select_train_sampleY[sel_num] = sel_num
             # select_train_sampleY = select_train_sampleY.reshape(len(select_train_sampleY),1 ,248 ,4)
             
             
-            random_sample_Un = np.random.choice(len(X_unlabeled), size=round(800), replace=False, p=None)
+            random_sample_Un = np.random.choice(len(X_unlabeled), size=round(500), replace=False, p=None)
 
             select_unlabel_sample = X_unlabeled[random_sample_Un]
             
@@ -668,8 +674,14 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
             pca = PCA(n_components = 2)
             encode_select_trainsampleX = encode_select_trainsampleX.reshape(len(encode_select_trainsampleX),len(encode_select_trainsampleX[0][0])*len(encode_select_trainsampleX[0][0][0]))
             label_pca = pca.fit_transform(encode_select_trainsampleX)
+            print(label_pca)
             encode_unlabelsample = encode_unlabelsample.reshape(len(encode_unlabelsample),len(encode_unlabelsample[0][0])*len(encode_unlabelsample[0][0][0]))
             unlabel_pca = pca.fit_transform(encode_unlabelsample)
+            print(unlabel_pca)
+            print(np.vstack((label_pca,unlabel_pca)))
+
+            sys.exit(0)
+
             label_pca_ = [[label_pca[:,0][i],label_pca[:,1][i]] for i in range(len(label_pca[:,0])) ]
             unlabel_pca_ = [[unlabel_pca[:,0][i], unlabel_pca[:,1][i]] for i in range(len(unlabel_pca[:,0]))]
             print(np.shape(unlabel_pca_))
@@ -686,7 +698,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
             print(pseudo_label)
 
 
-            for nn in range(11):
+            for nn in range(50):
                 if(nn == 0):
                     spread_num = 5
                 else:
@@ -719,9 +731,11 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                     print( min(distance_M[random_index_select[hh]]) )
 
                     min_index = np.where((distance_M[random_index_select[hh]]==min(distance_M[random_index_select[hh]])))[0]
+                    # 找到这一行最小值的索引
                     min_index = min_index[0]
                     print(min_index)
                     new = unchoose_M[ min_index ]
+                    # 把这个未选中的点设为new
                     choose_M.append( unchoose_M[ min_index ] )
                     # 问题在于更新之后，新加入的点在下一次扩展的时候可能会被重复考虑，并且新加入的点于自己计算会变成0
                     # 也就是加入点之后距离表不能及时更新,如果全部更新又过于compentation expensive
@@ -730,17 +744,17 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                     # 删掉加入的列
                     unchoose_M = np.delete(unchoose_M,min_index,0)
                     distance_M = np.delete(distance_M,min_index,1)
-                    new_dis = np.zeros((1, len(unchoose_M)))
-                    print(min_index)
-                    print(unchoose_M)
-                    print(new)
-                    print(np.shape(new))
+                    new_dis = np.zeros((len(unchoose_M,)))
+                    # print(min_index)
+                    # print(unchoose_M)
+                    # print(new)
+                    # print(np.shape(new))
                     for n in range(len(unchoose_M)):
                         new_dis[n] = math.sqrt(math.pow(new[0] - unchoose_M[n][0],2) +math.pow(new[1] - unchoose_M[n][1],2))
-                    print(new_dis)
+                    # print(new_dis)
                     print(np.shape(distance_M))
-                    print(np.shape(new_dis))
-                    distance_M = np.append((distance_M, new_dis),axis=0)
+                    # print(np.shape(new_dis))
+                    distance_M = np.vstack((distance_M, new_dis))
                         # 计算距离更新之后那部分的矩阵
                         # http://whatbeg.com/2019/06/05/gpudriverupdate.html
                     # print(unchoose_M[428])
@@ -752,9 +766,12 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                     # unchoose_M = np.delete(unchoose_M,int(np.where(( distance_M[random_index_select[hh]]==min(distance_M[random_index_select[hh]])))),)
                     # 因为要记录索引,就不直接从矩阵里删除了
                     pseudo_label.append(pseudo_label[random_index_select[hh]])
-                    unlabel_index.append(np.where(( unlabel_pca_ == new ))[0])
+                    for i1 in range(len(unlabel_pca_)):
+                        if(unlabel_pca_[i1][0] == new[0]):
+                            o_i = i1
+                    # print(unlabel_pca_)
 
-                    origin_index.append( random_sample_Un[np.where(( unlabel_pca_ == new ))])
+                    origin_index.append( random_sample_Un[ o_i ])
                     # 这里获得原始的index，可以用来最后拼接训练矩阵
             
             print(origin_index)
@@ -770,8 +787,9 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
             X_combined = np.array(X_combined)
             Y_combined = np.array(Y_combined)
             choose_M = np.array(choose_M)
+            encode_unlabelsample = np.array(encode_unlabelsample)
             with open('/home/sxz/data/geolife_Data/pseudo_data1.pickle', 'wb') as f:
-                pickle.dump([X_combined, Y_combined ,choose_M], f)
+                pickle.dump([X_combined, Y_combined ,choose_M, unlabel_pca], f)
             
             sys.exit(0)     
         
