@@ -15,7 +15,7 @@ min_distance = 150
 min_time = 60
 
 
-filename = '/home/xiaozhuangs/Transportation-Mode-Identification-with-UnsupervisedLearning/paper2_Trajectory_Label.pickle'
+filename = '/home/sxz/data/geolife_Data/paper2_Trajectory_Label.pickle'
 with open(filename, 'rb') as f:
     trajectory_all_user_with_label, trajectory_all_user_wo_label = pickle.load(f)
 
@@ -87,6 +87,7 @@ def labeled_gps_to_trip(trajectory_one_user, trip_time):
 # The two following lists contain all trips of all users.
 trip_all_user_with_label = [labeled_gps_to_trip(trajectory, trip_time=20*60) for trajectory in
                             trajectory_all_user_with_label]
+                            # 对trajectory_all_user_with_label中的每个trajectory按二十分钟切分trip 得到user
 trip_all_user_wo_label = [unlabeled_gps_to_trip(trajectory, trip_time=20*60) for trajectory in
                           trajectory_all_user_wo_label]
 
@@ -199,6 +200,7 @@ def compute_trip_motion_features(all_trip_one_user, data_type):
                 jerk.append(compute_jerk(acc1, acc2, delta_time=delta_time_1))
                 bearing_rate.append(compute_bearing_rate(compute_bearing(trip[i], trip[i + 1]),
                                                          compute_bearing(trip[i + 1], trip[i + 2])))
+                # 对切分出来的20分钟一段的路径算相应点的特征
                 delta_time_2 = delta_time_3
                 distance_1 = distance_2
                 distance_2 = distance_3
@@ -224,10 +226,10 @@ trip_motion_all_user_wo_label = [compute_trip_motion_features(user, data_type='u
                                  in trip_all_user_wo_label]
 
 # This pickling and unpickling is due to large computation time before this line.
-with open('/home/xiaozhuangs/Transportation-Mode-Identification-with-UnsupervisedLearning/paper2_trips_motion_features_temp.pickle', 'wb') as f:
+with open('/home/sxz/data/geolife_Data/paper2_trips_motion_features_temp.pickle', 'wb') as f:
     pickle.dump([trip_motion_all_user_with_label, trip_motion_all_user_wo_label], f)
 
-filename = '/home/xiaozhuangs/Transportation-Mode-Identification-with-UnsupervisedLearning/paper2_trips_motion_features_temp.pickle'
+filename = '/home/sxz/data/geolife_Data/paper2_trips_motion_features_temp.pickle'
 with open(filename, 'rb') as f:
     trip_motion_all_user_with_label, trip_motion_all_user_wo_label = pickle.load(f)
 
@@ -280,7 +282,7 @@ trip_motion_all_user_wo_label = [trip for user in trip_motion_all_user_wo_label 
 random.shuffle(trip_motion_all_user_wo_label)
 
 
-with open('paper2_trips_motion_features_NotFixedLength_woOutliers.pickle', 'wb') as f:
+with open('/home/sxz/data/geolife_Data/paper2_trips_motion_features_NotFixedLength_woOutliers.pickle', 'wb') as f:
     pickle.dump([trip_motion_all_user_with_label, trip_motion_all_user_wo_label], f)
 
 print('Running time', time.clock() - current)

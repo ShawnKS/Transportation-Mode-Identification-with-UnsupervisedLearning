@@ -662,7 +662,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
             # select_train_sampleY = select_train_sampleY.reshape(len(select_train_sampleY),1 ,248 ,4)
             
             
-            random_sample_Un = np.random.choice(len(X_unlabeled), size=round(400), replace=False, p=None)
+            random_sample_Un = np.random.choice(len(X_unlabeled), size=round(500), replace=False, p=None)
 
             select_unlabel_sample = X_unlabeled[random_sample_Un]
             
@@ -701,7 +701,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
             print(pseudo_label)
 
 
-            for nn in range(40):
+            for nn in range(50):
                 if(nn == 0):
                     spread_num = 5
                 else:
@@ -711,13 +711,26 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                     for n in range(len(unchoose_M)):
                         distance_M[m][n] = math.sqrt(math.pow(choose_M[m][0] - unchoose_M[n][0],2) +math.pow(choose_M[m][1] - unchoose_M[n][1],2))
                         # 计算距离矩阵
-                random_index_select = np.random.choice(len(choose_M),size=round(spread_num),replace=False,p=None)
-                print(distance_M)
-                print(choose_M)
-                # unchoose_M = np.delete(unchoose_M, [0], axis=0)
-                # print(np.shape(unchoose_M))
-                # print(random_index_select)
-                # sys.exit(0)
+
+                random_index_select = np.zeros(spread_num, dtype =int)
+                for ss in range(spread_num):
+                    weight = [86,108,136,151,351]
+                    choice_deter = random.randint(0,351)
+                    for ias in range(5):
+                        if(choice_deter<=weight[ias]):
+                            append_ = ias
+                            break
+                    # 随机选择一个该索引已经标上的数据加入到下一轮的扩点中
+                    print(choice_deter)
+                    wtf = np.array(pseudo_label)
+                    print(np.argwhere(wtf==append_ )[0])
+                    r_choose = np.random.choice(len( np.argwhere(wtf==append_ ) ),size=round(1), replace=False,p=None)
+                    print(r_choose)
+
+                    random_index_select[ss] = np.argwhere(wtf==append_)[r_choose][0]
+                print(random_index_select)
+                random_index_select.astype(int)
+                random_index_select = np.array(random_index_select)
 
                 # 随机选择5/10个点进行扩展
                 # print(unchoose_M)

@@ -109,7 +109,7 @@ for index, user in enumerate(label_all_user):
     trajectory_all_user_wo_label.append(unlabeled_trajectory)
 
 # Save Trajectory_Array and Label_Array for all users
-with open("paper2_Trajectory_Label.pickle", 'wb') as f:
+with open("/home/sxz/data/geolife_Data/paper2_Trajectory_Label.pickle", 'wb') as f:
     pickle.dump([trajectory_all_user_with_label_Final, trajectory_all_user_wo_label], f)
 
 print(time.clock() - start_time, 'Seconds')
