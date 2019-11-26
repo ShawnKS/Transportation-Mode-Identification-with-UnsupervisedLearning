@@ -1,9 +1,10 @@
 import pickle
 from datetime import datetime
+import numpy as np
 import os
 import time
 start_time = time.clock()
-
+count_sum = 0
 
 def days_date(time_str):
     date_format = "%Y/%m/%d %H:%M:%S"
@@ -53,20 +54,33 @@ for folder in users_folder:
                 GPS_logs_split = map(lambda x: x.rstrip('\r\n').split(','), GPS_logs)
                 for row in GPS_logs_split:
                     trajectory_one_user.append([float(row[0]), float(row[1]), float(row[4])])
+                    # count_sum += 1
                     # 取出经纬度和时间戳,append成一个数组
         trajectory_all_user_with_label.append(trajectory_one_user)
 
         label_dir = geolife_dir + folder + '/labels.txt'
         with open(label_dir, 'r', newline='', encoding='utf-8') as f:
             label = list(map(lambda x: x.rstrip('\r\n').split('\t'), f))
+            # print(label)
+            # print(np.shape(label))
             label_filter = list(filter(lambda x: len(x) == 3 and x[2] in Ground_Mode, label))
+            # 找到包含Ground_Mode的数据
+            # print("the label filter is {}".format(label_filter))
+            # sys.exit(0)
             label_one_user = []
             for row in label_filter:
+                # print(row)
                 label_one_user.append([days_date(row[0]), days_date(row[1]), Mode_Index[row[2]]])
+        # sys.exit(0)
         label_all_user.append(label_one_user)
-
+# print(count_sum)
+# sys.exit(0)
 trajectory_all_user_with_label_Final = []  # Only contain users' trajectories that have labels
+print(len(label_all_user))
 for index, user in enumerate(label_all_user):
+    # label_all_user是所有uesr的Label信息
+    # user是单条label 信息的起止时间和label
+    # trajectory_all_user_with_label包括单个用户的时间戳和经纬度
     trajectory_user = trajectory_all_user_with_label[index]
     classes = {0: [], 1: [], 2: [], 3: [], 4: []}
     start_index = 0
@@ -82,6 +96,7 @@ for index, user in enumerate(label_all_user):
             continue
 
         for index1, trajectory in enumerate(trajectory_user):
+            # 单个user所有的trajectory拿出来晒
             if start <= trajectory[2] <= end:
                 start_index += index1
                 trajectory_user = trajectory_user[index1 + 1:]
@@ -107,6 +122,8 @@ for index, user in enumerate(label_all_user):
     trajectory_all_user_with_label_Final.append(labeled_trajectory)
     unlabeled_trajectory = list(filter(lambda x: len(x) == 3, trajectory_all_user_with_label[index]))
     trajectory_all_user_wo_label.append(unlabeled_trajectory)
+    # 处理之后长度为4的为labeled trajectory,长度为3的为unlabeled trajectory
+    # 这里没做任何跟outlier有关系的操作
 
 # Save Trajectory_Array and Label_Array for all users
 with open("/home/sxz/data/geolife_Data/paper2_Trajectory_Label.pickle", 'wb') as f:

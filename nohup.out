@@ -1,0 +1,39 @@
+2_Instance_Creation.py:12: DeprecationWarning: time.clock has been deprecated in Python 3.3 and will be removed from Python 3.8: use time.perf_counter or time.process_time instead
+  current = time.clock()
+2_Instance_Creation.py:12: DeprecationWarning: time.clock has been deprecated in Python 3.3 and will be removed from Python 3.8: use time.perf_counter or time.process_time instead
+  current = time.clock()
+2_Instance_Creation.py:110: DeprecationWarning: Vincenty is deprecated and is going to be removed in geopy 2.0. Use `geopy.distance.geodesic` (or the default `geopy.distance.distance`) instead, which is more accurate and always converges.
+  return vincenty(lat_long_1, lat_long_2).meters
+2_Instance_Creation.py:292: DeprecationWarning: time.clock has been deprecated in Python 3.3 and will be removed from Python 3.8: use time.perf_counter or time.process_time instead
+  print('Running time', time.clock() - current)
+Descriptive statistics for labeled count      120.000000
+mean      1041.025000
+std       2833.692215
+min         20.000000
+5%          33.750000
+10%         44.500000
+15%         65.400000
+25%        104.250000
+50%        330.000000
+75%        677.500000
+85%       1084.500000
+90%       1518.800000
+95%       3945.550000
+max      22362.000000
+dtype: float64
+Descriptive statistics for unlabeled count     1141.000000
+mean       880.255039
+std       1664.634520
+min         20.000000
+5%          44.000000
+10%         74.000000
+15%         97.000000
+25%        169.000000
+50%        425.000000
+75%        987.000000
+85%       1468.000000
+90%       1942.000000
+95%       3038.000000
+max      34509.000000
+dtype: float64
+Running time 8404.134024

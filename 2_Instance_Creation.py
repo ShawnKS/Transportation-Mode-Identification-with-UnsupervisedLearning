@@ -3,6 +3,7 @@ import pickle
 from geopy.distance import vincenty
 import math
 import time
+import sys
 import random
 import pandas as pd
 
@@ -19,7 +20,7 @@ filename = '/home/sxz/data/geolife_Data/paper2_Trajectory_Label.pickle'
 with open(filename, 'rb') as f:
     trajectory_all_user_with_label, trajectory_all_user_wo_label = pickle.load(f)
 
-
+# print("what the fuck")
 # trajectory_all_user_with_label = trajectory_all_user_with_label[:2]
 # trajectory_all_user_wo_label = trajectory_all_user_wo_label[:2]
 
@@ -43,8 +44,9 @@ def unlabeled_gps_to_trip(trajectory_one_user, trip_time):
     i = 0
     while i < len(trajectory_one_user) - 1:
         delta_time = (trajectory_one_user[i+1][2] - trajectory_one_user[i][2]) * 24 * 3600
-        #  取出每一段的segment，如果前后时间相差太大则断开，认为不是同一段
+                #  取出每一段的segment，如果
         if 0 < delta_time <= trip_time:
+        #  trip_time 最小时间阈值
             trip.append(trajectory_one_user[i])
             i += 1
         elif delta_time > trip_time:
@@ -53,6 +55,7 @@ def unlabeled_gps_to_trip(trajectory_one_user, trip_time):
             trip = []
             i += 1
         else:
+            # 删掉负数的点
             trajectory_one_user.remove(trajectory_one_user[i + 1])
     return all_trip_one_user
 
@@ -236,6 +239,7 @@ with open(filename, 'rb') as f:
 
 def trip_check_thresholds(trip_motion_all_user, min_threshold, min_distance, min_time, data_type):
     # Remove trip with less than a min GPS point, less than a min-distance, less than a min trip time.
+    # 检查最小阈值是否达到
     all_user = []
     if data_type == 'labeled':
         for user in trip_motion_all_user:
