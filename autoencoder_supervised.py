@@ -29,15 +29,19 @@ filename = '/home/sxz/data/geolife_Data/Origin_data_Cross.pickle'
 with open(filename, 'rb') as f:
     Train_X, Train_Y,Test_X, Test_Y, Test_Y_ori = pickle.load(f)
 print(Train_X)
+# 这是重新做的dataset
+filename = '/home/sxz/data/geolife_Data/My_data_for_DL_kfold_dataset_RL.pickle'
+with open(filename, 'rb') as f:
+    kfold_dataset, label = pickle.load(f)
 # 这是伪标签拼出来的
-filename = '/home/sxz/data/geolife_Data/pseudo_data1.pickle'
+filename = '/home/sxz/data/geolife_Data/pseudo_data2.pickle'
 with open(filename, 'rb') as f:
     Train_X, Train_Y1, _ ,_ = pickle.load(f)
-    
-with open('/home/sxz/data/geolife_Data/test_Data.pickle', 'rb') as f:
-    Test_X, Test_Y, Test_Y_ori = pickle.load(f)
-print(np.shape(Train_X))
-print(np.shape(Train_Y1))
+
+# with open('/home/sxz/data/geolife_Data/test_Data.pickle', 'rb') as f:
+#     Test_X, Test_Y, Test_Y_ori = pickle.load(f)
+# print(np.shape(Train_X))
+# print(np.shape(Train_Y1))
 Train_Y = np.zeros((len(Train_Y1),5))
 
 # sample = np.random.choice(len( Train_X ) ,size=round(len(Train_X)), replace=False,p=None)
@@ -45,8 +49,8 @@ Train_Y = np.zeros((len(Train_Y1),5))
 for i in range(len(Train_Y1)):
     Train_Y[i][Train_Y1[i]] = 1
 print(Train_Y)
-# Train_X = Train_X[sample]
-# Train_Y = Train_Y[sample]
+Train_X = Train_X[:5]
+Train_Y = Train_Y[:5]
 times = 2
 acc_all = 0
 acc_w_all = 0
@@ -128,6 +132,11 @@ for i in range(times):
     print(A)
     acc = 0
     acc_w = 0
+
+    Test_X = kfold_dataset[i][2]
+    Test_Y = kfold_dataset[i][3]
+    Test_Y_ori = kfold_dataset[i][4]
+
     optimizer = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
     model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 

@@ -42,7 +42,7 @@ initializer = tf.contrib.layers.xavier_initializer(uniform=True, seed=None, dtyp
 
 # Import the data
 #filename = '../Mode-codes-Revised/paper2_data_for_DL_train_val_test.pickle'
-filename = '/home/sxz/data/geolife_Data/My_data_for_DL_kfold_dataset_RL.pickle'
+filename = '/home/sxz/data/geolife_Data/paper2_data_for_DL_kfold_dataset_RL.pickle'
 with open(filename, 'rb') as f:
     kfold_dataset, X_unlabeled = pickle.load(f)
 
@@ -432,4 +432,4 @@ def training_all_folds(label_proportions, num_filter):
     return test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics
 
 test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(
-    label_proportions=[0.01,0.1], num_filter=[32, 32, 64, 64])
+    label_proportions=[0.5,1], num_filter=[32, 32, 64, 64])

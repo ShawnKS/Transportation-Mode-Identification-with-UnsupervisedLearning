@@ -4,7 +4,7 @@ import keras
 
 # Import the final output from Instance_creation file, which is the filtered trips for all users.
 
-filename = '/home/sxz/data/geolife_Data/paper2_trips_motion_features_NotFixedLength_woOutliers.pickle'
+filename = '/home/sxz/data/geolife_Data/my_trips_motion_features_NotFixedLength_woOutliers.pickle'
 with open(filename, 'rb') as f:
     trip_motion_all_user_with_label, trip_motion_all_user_wo_label = pickle.load(f)
     #trip_motion_all_user_with_label = trip_motion_all_user_with_label[:1000]
@@ -119,8 +119,11 @@ def trip_to_fixed_length(trip_motion_all_user, min_threshold, max_threshold, min
 X_labeled, Y_labeled_ori = trip_to_fixed_length(trip_motion_all_user_with_label, min_threshold=min_threshold,
                                                                 max_threshold=max_threshold, min_distance=min_distance, min_time=min_time,
                                                                 data_type='labeled')
+print(np.shape(trip_motion_all_user_with_label))
+print(len(trip_motion_all_user_wo_label))
 X_unlabeled = trip_to_fixed_length(trip_motion_all_user_wo_label, min_threshold=min_threshold,
                                              max_threshold=max_threshold, min_distance=min_distance, min_time=min_time, data_type='unlabeled')
+print(np.shape(X_unlabeled))
 
 
 def change_to_new_channel(input):
@@ -198,5 +201,5 @@ a = len(np.where(kfold_dataset[4][1]==0)[0])/len(kfold_dataset[4][1])
 
 b = len(np.where(kfold_dataset[4][4]==0)[0])/len(kfold_dataset[4][4])
 
-with open('/home/sxz/data/geolife_Data/paper2_data_for_DL_kfold_dataset_RL_SAJB.pickle', 'wb') as f:
+with open('/home/sxz/data/geolife_Data/My_data_for_DL_kfold_dataset_RL.pickle', 'wb') as f:
     pickle.dump([kfold_dataset, X_unlabeled], f)

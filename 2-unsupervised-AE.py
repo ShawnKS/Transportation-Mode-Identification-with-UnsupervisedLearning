@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import warnings
 warnings.filterwarnings("ignore")
@@ -48,7 +48,7 @@ initializer = tf.contrib.layers.xavier_initializer(uniform=True, seed=None, dtyp
 
 # Import the data
 #filename = '../Mode-codes-Revised/paper2_data_for_DL_train_val_test.pickle'
-filename = '/home/sxz/data/geolife_Data/paper2_data_for_DL_kfold_dataset_RL.pickle'
+filename = '/home/sxz/data/geolife_Data/My_data_for_DL_kfold_dataset_RL.pickle'
 encode_len = 0
 with open(filename, 'rb') as f:
     kfold_dataset, X_unlabeled = pickle.load(f)
@@ -504,7 +504,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     #input_size是第一个维度之后的维度
     #np.shape() 和np.array().shape的功能差不多
     # Various sets of number of filters for ensemble. If choose one set, no ensemble is implemented.
-    num_filter_ae_cls_all = [[16, 16, 64, 64, 256, 256]]
+    num_filter_ae_cls_all = [[100, 100, 200, 200, 400, 400]]
 
 # herehere here here
 
@@ -667,6 +667,15 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
             select_unlabel_sample = X_unlabeled[random_sample_Un]
             
             encode_select_trainsampleX = encode_AE_data(select_train_sampleX, latent, input_labeled, sess)
+            encode_labeldata = encode_AE_data(one_fold[0] , latent, input_labeled, sess)
+
+
+            # 编码label_data
+            with open('/home/sxz/data/geolife_Data/origin_data2.pickle', 'wb') as f:
+                pickle.dump([encode_labeldata , one_fold[1]], f)
+            sys.exit(0)
+
+
             encode_unlabelsample = encode_AE_data(select_unlabel_sample, latent, input_labeled, sess)
             print(encode_select_trainsampleX)
             print(encode_unlabelsample)
@@ -714,8 +723,8 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
 
                 random_index_select = np.zeros(spread_num, dtype =int)
                 for ss in range(spread_num):
-                    weight = [86,108,136,151,351]
-                    choice_deter = random.randint(0,351)
+                    weight = [50,100,150,200,250]
+                    choice_deter = random.randint(0,250)
                     for ias in range(5):
                         if(choice_deter<=weight[ias]):
                             append_ = ias
@@ -805,7 +814,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
             Y_combined = np.array(Y_combined)
             choose_M = np.array(choose_M)
             encode_unlabelsample = np.array(encode_unlabelsample)
-            with open('/home/sxz/data/geolife_Data/pseudo_data1.pickle', 'wb') as f:
+            with open('/home/sxz/data/geolife_Data/pseudo_data2.pickle', 'wb') as f:
                 pickle.dump([X_combined, Y_combined ,choose_M, unlabel_pca], f)
             
             sys.exit(0)     

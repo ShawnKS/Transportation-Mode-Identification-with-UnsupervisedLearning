@@ -50,7 +50,7 @@ for T in range(times):
 
 
         # Training and test set for GPS segments
-        prop = 0.01
+        prop = 1
         random.seed(7)
         np.random.seed(7)
         tf.set_random_seed(7)
@@ -126,16 +126,14 @@ for T in range(times):
             Train_Y[k][ori[k]] = 1
         Train_Y = Train_Y[random_sample]
         ori = ori[random_sample]
-
-        # # 以下是只抽5个样本出来训练的结果
-        # index = np.zeros((5,),dtype = int)
-        # for i in range(5):
-        #     print(i)
-        #     print(np.where( ori == i )[0])
-        #     index[i] = np.where( ori == i)[0][0]
-        # print(index)
-        # Train_X = Train_X[index]
-        # Train_Y = Train_Y[index]
+        index = np.zeros((5,),dtype = int)
+        for i in range(5):
+            print(i)
+            print(np.where( ori == i )[0])
+            index[i] = np.where( ori == i)[0][0]
+        print(index)
+        Train_X = Train_X[index]
+        Train_Y = Train_Y[index]
         
         
         # print(Train_Y)

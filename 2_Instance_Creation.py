@@ -16,9 +16,10 @@ min_distance = 150
 min_time = 60
 
 
-filename = '/home/sxz/data/geolife_Data/paper2_Trajectory_Label.pickle'
+filename = '/home/sxz/data/geolife_Data/my_Trajectory_Label.pickle'
 with open(filename, 'rb') as f:
     trajectory_all_user_with_label, trajectory_all_user_wo_label = pickle.load(f)
+# print(np.shape(trajectory_all_user_wo_label))
 
 # print("what the fuck")
 # trajectory_all_user_with_label = trajectory_all_user_with_label[:2]
@@ -43,8 +44,12 @@ def unlabeled_gps_to_trip(trajectory_one_user, trip_time):
     all_trip_one_user = []
     i = 0
     while i < len(trajectory_one_user) - 1:
+#         print(i)
         delta_time = (trajectory_one_user[i+1][2] - trajectory_one_user[i][2]) * 24 * 3600
-                #  取出每一段的segment，如果
+#         print(delta_time)
+#         if(i==7722):
+#             sys.exit(0)
+                #  取出每一段的segment,如果小于阈值,做append
         if 0 < delta_time <= trip_time:
         #  trip_time 最小时间阈值
             trip.append(trajectory_one_user[i])
@@ -56,7 +61,9 @@ def unlabeled_gps_to_trip(trajectory_one_user, trip_time):
             i += 1
         else:
             # 删掉负数的点
-            trajectory_one_user.remove(trajectory_one_user[i + 1])
+#             trajectory_one_user.remove(trajectory_one_user[i + 1])
+            i += 1
+            print(len(trajectory_one_user))
     return all_trip_one_user
 
 
@@ -91,8 +98,13 @@ def labeled_gps_to_trip(trajectory_one_user, trip_time):
 trip_all_user_with_label = [labeled_gps_to_trip(trajectory, trip_time=20*60) for trajectory in
                             trajectory_all_user_with_label]
                             # 对trajectory_all_user_with_label中的每个trajectory按二十分钟切分trip 得到user
+# print(np.shape(trajectory_all_user_wo_label))
+# sys.exit(0)
 trip_all_user_wo_label = [unlabeled_gps_to_trip(trajectory, trip_time=20*60) for trajectory in
                           trajectory_all_user_wo_label]
+
+# print(np.shape(trip_all_user_wo_label))
+# sys.exit(0)
 
 
 def compute_delta_time(p1, p2):
@@ -229,10 +241,10 @@ trip_motion_all_user_wo_label = [compute_trip_motion_features(user, data_type='u
                                  in trip_all_user_wo_label]
 
 # This pickling and unpickling is due to large computation time before this line.
-with open('/home/sxz/data/geolife_Data/paper2_trips_motion_features_temp.pickle', 'wb') as f:
+with open('/home/sxz/data/geolife_Data/my_trips_motion_features_temp.pickle', 'wb') as f:
     pickle.dump([trip_motion_all_user_with_label, trip_motion_all_user_wo_label], f)
 
-filename = '/home/sxz/data/geolife_Data/paper2_trips_motion_features_temp.pickle'
+filename = '/home/sxz/data/geolife_Data/my_trips_motion_features_temp.pickle'
 with open(filename, 'rb') as f:
     trip_motion_all_user_with_label, trip_motion_all_user_wo_label = pickle.load(f)
 
@@ -254,6 +266,9 @@ def trip_check_thresholds(trip_motion_all_user, min_threshold, min_distance, min
 # Apply the threshold values to each GPS segment
 trip_motion_all_user_with_label = trip_check_thresholds(trip_motion_all_user_with_label, min_threshold=min_threshold, min_distance=min_distance, min_time=min_time,
                                                         data_type='labeled')
+
+# 切分出来的路径,还未拼接成CNN的形状
+
 trip_motion_all_user_wo_label = trip_check_thresholds(trip_motion_all_user_wo_label, min_threshold=min_threshold, min_distance=min_distance, min_time=min_time,
                                                         data_type='unlabeled')
 
@@ -286,7 +301,7 @@ trip_motion_all_user_wo_label = [trip for user in trip_motion_all_user_wo_label 
 random.shuffle(trip_motion_all_user_wo_label)
 
 
-with open('/home/sxz/data/geolife_Data/paper2_trips_motion_features_NotFixedLength_woOutliers.pickle', 'wb') as f:
+with open('/home/sxz/data/geolife_Data/my_trips_motion_features_NotFixedLength_woOutliers_tmp.pickle', 'wb') as f:
     pickle.dump([trip_motion_all_user_with_label, trip_motion_all_user_wo_label], f)
 
 print('Running time', time.clock() - current)
