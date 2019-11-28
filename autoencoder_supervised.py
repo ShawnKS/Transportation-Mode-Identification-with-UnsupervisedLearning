@@ -34,10 +34,11 @@ filename = '/home/sxz/data/geolife_Data/My_data_for_DL_kfold_dataset_RL.pickle'
 with open(filename, 'rb') as f:
     kfold_dataset, label = pickle.load(f)
 # 这是伪标签拼出来的
-filename = '/home/sxz/data/geolife_Data/pseudo_data2.pickle'
+filename = '/home/sxz/data/geolife_Data/pseudo_data3.pickle'
 with open(filename, 'rb') as f:
-    Train_X, Train_Y1, _ ,_ = pickle.load(f)
-
+    Train_X, Train_Y1 = pickle.load(f)
+# Train_X = Train_X[100:]
+# Train_Y1 = Train_Y1[100:]
 # with open('/home/sxz/data/geolife_Data/test_Data.pickle', 'rb') as f:
 #     Test_X, Test_Y, Test_Y_ori = pickle.load(f)
 # print(np.shape(Train_X))
@@ -49,8 +50,8 @@ Train_Y = np.zeros((len(Train_Y1),5))
 for i in range(len(Train_Y1)):
     Train_Y[i][Train_Y1[i]] = 1
 print(Train_Y)
-Train_X = Train_X[:5]
-Train_Y = Train_Y[:5]
+# Train_X = Train_X[:5]
+# Train_Y = Train_Y[:5]
 times = 2
 acc_all = 0
 acc_w_all = 0

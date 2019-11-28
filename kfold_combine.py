@@ -17,23 +17,18 @@ import tensorflow as tf
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 x = np.ones((1, 2, 3))
 a = np.transpose(x, (1, 0, 2))
-import heapq
 
 # filename = '/home/sxz/data/geolife_Data/Origin_data_Cross.pickle'
 # with open(filename, 'rb') as f:
 #     Train_X1, Train_Y1,Test_X1, Test_Y1, Test_Y_ori1 = pickle.load(f)
 filename = '/home/sxz/data/geolife_Data/My_data_for_DL_kfold_dataset_RL.pickle'
 with open(filename, 'rb') as f:
-    kfold_dataset1, unlabel = pickle.load(f)
+    kfold_dataset1, label1 = pickle.load(f)
 
-print(np.shape(unlabel))
-random_sample = np.random.choice(len(unlabel), size=int(0.1*len(unlabel)), replace=True, p=None)
-unlabel = unlabel[random_sample]
-# sys.exit(0)
 
 filename = '/home/sxz/data/geolife_Data/My_data_for_DL_kfold_dataset_RL.pickle'
 with open(filename, 'rb') as f:
-    kfold_dataset, unlabel = pickle.load(f)
+    kfold_dataset, label = pickle.load(f)
 # print(kfold_dataset[0][1])
 # print(len(kfold_dataset[0][1][kfold_dataset[0][1]==0]))
 # print(len(kfold_dataset[0][1][kfold_dataset[0][1]==1]))
@@ -125,11 +120,6 @@ for T in range(times):
         random_sample = np.random.choice(len(Train_X), size=int(prop*len(Train_X)), replace=True, p=None)
         Train_X = Train_X[random_sample]
         ori = kfold_dataset[i][1]
-
-        Train_X_tmp = Train_X
-        Train_Y_tmp = ori[random_sample]
-
-
         Train_Y = np.zeros([len(kfold_dataset[i][0]) , 5])
         
         for k in range(len(kfold_dataset[i][0])):
@@ -176,93 +166,6 @@ for T in range(times):
 
             A = np.argmax(hist.history['val_acc'])
             print('the optimal epoch size: {}, the value of high accuracy {}'.format(hist.epoch[A], np.max(hist.history['val_acc'])))
-
-            r = model_all[i2].predict(unlabel,batch_size=1000)
-            print(r)
-            print(np.argmax(r,axis=1))
-            mark = np.argmax(r,axis=1)
-
-            _0index = np.where(mark == 0)[0]
-            print(np.shape(mark))
-            print(np.shape(_0index))
-            print(_0index)
-            print(r[_0index][:,0])
-            _0array = r[_0index][:,0].tolist()
-            max_num_index_0 = map(_0array.index, heapq.nlargest(20,_0array))
-            temp = list(max_num_index_0)
-            print(np.shape(_0index))
-            print(temp)
-            print(_0index[temp])
-            #_0index[temp]就是置信度最高的1000个unlabel的点
-
-            u0data = unlabel[_0index[temp]]
-
-            print(np.shape(u0data))
-
-            _1index = np.where(mark == 1)[0]
-            _1array = r[_1index][:,1].tolist()
-            max_num_index_1 = map(_1array.index, heapq.nlargest(20,_1array))
-            temp = list(max_num_index_1)
-            u1data = unlabel[_1index[temp]]
-            print(np.shape(u1data))
-
-
-            _2index = np.where(mark == 2)[0]
-            _2array = r[_2index][:,2].tolist()
-            max_num_index_2 = map(_2array.index, heapq.nlargest(20,_2array))
-            temp = list(max_num_index_2)
-            u2data = unlabel[_2index[temp]]
-            print(np.shape(u2data))
-
-            _3index = np.where(mark == 3)[0]
-            _3array = r[_3index][:,3].tolist()
-            max_num_index_3 = map(_3array.index, heapq.nlargest(20,_3array))
-            temp = list(max_num_index_3)
-            u3data = unlabel[_3index[temp]]
-            print(np.shape(u3data))
-
-
-            _4index = np.where(mark == 4)[0]
-            _4array = r[_4index][:,4].tolist()
-            max_num_index_4 = map(_4array.index, heapq.nlargest(20,_4array))
-            temp = list(max_num_index_4)
-            u4data = unlabel[_4index[temp]]
-            print(np.shape(u4data))
-
-            unlabel_t = []
-            unlabel_t = np.vstack((u0data,u1data))
-            unlabel_t = np.vstack((unlabel_t,u2data))
-            unlabel_t = np.vstack((unlabel_t,u3data))
-            unlabel_t = np.vstack((unlabel_t,u4data))
-            unlabel_Y = np.zeros((100,),dtype = int)
-            unlabel_Y[:20] = 0
-            unlabel_Y[20:40] = 1
-            unlabel_Y[40:60] = 2
-            unlabel_Y[60:80] = 3
-            unlabel_Y[80:100] = 4
-            unlabel_t = np.vstack((unlabel_t, Train_X_tmp))
-            print(unlabel_Y)
-            unlabel_Y = np.hstack((unlabel_Y,Train_Y_tmp))
-            print(unlabel_Y)
-            print(np.shape(unlabel_t))
-            print(np.shape(unlabel_Y))
-            # print(unlabel_Y[4999])
-            # sys.exit(0)
-            # _1index = np.where(mark == 1)
-            # _2index = np.where(mark == 2)
-            # _3index = np.where(mark == 3)
-            # _4index = np.where(mark == 4)
-            # max_1000_0 = map(_0index.index,heapq.nlargest(1000,))
-            # print(len(np.argmax(r,axis=1)[np.argmax(r,axis=1) == 0]))
-            # print(len(np.argmax(r,axis=1)[np.argmax(r,axis=1) == 1]))
-            # print(len(np.argmax(r,axis=1)[np.argmax(r,axis=1) == 2]))
-            # print(len(np.argmax(r,axis=1)[np.argmax(r,axis=1) == 3]))
-            # print(len(np.argmax(r,axis=1)[np.argmax(r,axis=1) == 4]))
-            with open('/home/sxz/data/geolife_Data/pseudo_data3.pickle', 'wb') as f:
-                pickle.dump([unlabel_t, unlabel_Y], f)
-                # pseudo_data3是真正的纯粹伪标签
-            # 每一类选择置信度最高的那一个点
-            sys.exit(0)
 
             # Calculating the test accuracy, precision, recall
             y_pred_all[i2] = np.argmax(model_all[i2].predict(Test_X, batch_size=100), axis=1)
