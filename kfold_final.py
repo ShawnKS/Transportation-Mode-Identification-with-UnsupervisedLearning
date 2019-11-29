@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import numpy as np
 import sys
@@ -34,6 +34,10 @@ unlabel = unlabel[random_sample]
 filename = '/home/sxz/data/geolife_Data/My_data_for_DL_kfold_dataset_RL.pickle'
 with open(filename, 'rb') as f:
     kfold_dataset, unlabel = pickle.load(f)
+
+filename = '/home/sxz/data/geolife_Data/pseudo_data4.pickle'
+with open(filename, 'rb') as f:
+    Train_Xp, Train_Yp = pickle.load(f)
 # print(kfold_dataset[0][1])
 # print(len(kfold_dataset[0][1][kfold_dataset[0][1]==0]))
 # print(len(kfold_dataset[0][1][kfold_dataset[0][1]==1]))
@@ -55,7 +59,7 @@ for T in range(times):
 
 
         # Training and test set for GPS segments
-        prop = 0.01
+        prop = 1
         random.seed(7)
         np.random.seed(7)
         tf.set_random_seed(7)
@@ -120,22 +124,22 @@ for T in range(times):
         acc = 0
         acc_w =0
         optimizer = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-        Train_X = kfold_dataset[i][0]
+        Train_X = Train_Xp
 
         random_sample = np.random.choice(len(Train_X), size=int(prop*len(Train_X)), replace=True, p=None)
         Train_X = Train_X[random_sample]
-        ori = kfold_dataset[i][1]
+        ori = Train_Yp
 
 
 
-        Train_Y = np.zeros([len(kfold_dataset[i][0]) , 5])
+        Train_Y = np.zeros([len(Train_Yp) , 5])
         
-        for k in range(len(kfold_dataset[i][0])):
+        for k in range(len(Train_Yp)):
             Train_Y[k][ori[k]] = 1
         Train_Y = Train_Y[random_sample]
         ori = ori[random_sample]
 
-        # 以下是只抽5个样本出来训练的结果
+        # # 以下是只抽5个样本出来训练的结果
         # index = np.zeros((5,),dtype = int)
         # for i in range(5):
         #     print(i)
@@ -145,9 +149,8 @@ for T in range(times):
         # Train_X = Train_X[index]
         # Train_Y = Train_Y[index]
         
-        Train_X_tmp = Train_X
+        # Train_X_tmp = Train_X
         # Train_Y_tmp = ori[index]
-        Train_Y_tmp = ori
 
         # print(Train_Y)
         # print(np.where(Train_Y==[1,0,0,0,0] ))
@@ -159,9 +162,9 @@ for T in range(times):
         Test_Y = kfold_dataset1[i][3]
         Test_Y_ori = kfold_dataset1[i][4]
 
-        print(Train_Y)
-        print(Train_X)
-
+        print(np.shape(Train_Y))
+        print(np.shape(Train_X))
+        # sys.exit(0)
         
         
         y_pred_all = np.zeros((ensemble_num,len(Test_X)))
@@ -184,10 +187,6 @@ for T in range(times):
             print(r)
             print(np.argmax(r,axis=1))
             mark = np.argmax(r,axis=1)
-            # 选择每一个输入对应概率最大数
-
-            num_select = 20
-            confidence = 0.3
 
             _0index = np.where(mark == 0)[0]
             print(np.shape(mark))
@@ -195,172 +194,64 @@ for T in range(times):
             print(_0index)
             print(r[_0index][:,0])
             _0array = r[_0index][:,0].tolist()
-            max_num_index_0 = map(_0array.index, heapq.nlargest(num_select,_0array))
+            max_num_index_0 = map(_0array.index, heapq.nlargest(20,_0array))
             temp = list(max_num_index_0)
             print(np.shape(_0index))
             print(temp)
-            count = 0  
-            for a in range(len(temp)):
-                a = a - count
-                print("{} and temp_length is {}".format(a,len(temp)))
-
-                b = r[_0index[temp]][a][0]
-
-                b1 = r[_0index[temp]][a][1]
-                b2 = r[_0index[temp]][a][2]
-                b3 = r[_0index[temp]][a][3]
-                b4 = r[_0index[temp]][a][4]
-
-                if(( b > b1 + confidence) & ( b > b2 + confidence) & (b > b3 + confidence) &
-                (b > b4 + confidence ) ):
-                    print("yes")
-                    print("this time :{}".format(a))
-                else:
-                    temp = np.delete(temp,a)
-                    count = count + 1
-                    print("after minus count = {}".format(count))
+            print(_0index[temp])
             #_0index[temp]就是置信度最高的指定个数的unlabel的点
 
             u0data = unlabel[_0index[temp]]
-            print(r[_0index[temp]])
 
             print(np.shape(u0data))
 
             _1index = np.where(mark == 1)[0]
             _1array = r[_1index][:,1].tolist()
-            max_num_index_1 = map(_1array.index, heapq.nlargest(num_select,_1array))
+            max_num_index_1 = map(_1array.index, heapq.nlargest(20,_1array))
             temp = list(max_num_index_1)
-            # 对应值的最大前N在预测出来的数组中对应的索引为_Nindex[temp]
-            print(r[_1index[temp]])
-            count = 0
-            for a in range(len(temp)):
-                a = a - count
-                print("{} and temp_length is {}".format(a,len(temp)))
-
-                b = r[_1index[temp]][a][1]
-
-                b1 = r[_1index[temp]][a][0]
-                b2 = r[_1index[temp]][a][2]
-                b3 = r[_1index[temp]][a][3]
-                b4 = r[_1index[temp]][a][4]
-
-                if(( b > b1 + confidence) & ( b > b2 + confidence) & (b > b3 + confidence) &
-                (b > b4 + confidence ) ):
-                    print("yes")
-                    print("this time :{}".format(a))
-                else:
-                    temp = np.delete(temp,a)
-                    count = count + 1
-                    print("after minus count = {}".format(count))
             u1data = unlabel[_1index[temp]]
-            
-            print(r[_1index[temp]])
             print(np.shape(u1data))
 
 
             _2index = np.where(mark == 2)[0]
             _2array = r[_2index][:,2].tolist()
-            max_num_index_2 = map(_2array.index, heapq.nlargest(num_select,_2array))
+            max_num_index_2 = map(_2array.index, heapq.nlargest(20,_2array))
             temp = list(max_num_index_2)
-            count = 0
-            for a in range(len(temp)):
-                a = a - count
-                print("{} and temp_length is {}".format(a,len(temp)))
-
-                b = r[_2index[temp]][a][2]
-                b1 = r[_2index[temp]][a][0]
-                b2 = r[_2index[temp]][a][1]
-                b3 = r[_2index[temp]][a][3]
-                b4 = r[_2index[temp]][a][4]
-
-                if(( b > b1 + confidence) & ( b > b2 + confidence) & (b > b3 + confidence) &
-                (b > b4 + confidence ) ):
-                    print("yes")
-                    print("this time :{}".format(a))
-                else:
-                    temp = np.delete(temp,a)
-                    count = count + 1
-                    print("after minus count = {}".format(count))
-
             u2data = unlabel[_2index[temp]]
             print(np.shape(u2data))
-            print(r[_2index[temp]])
 
             _3index = np.where(mark == 3)[0]
             _3array = r[_3index][:,3].tolist()
-            max_num_index_3 = map(_3array.index, heapq.nlargest(num_select,_3array))
+            max_num_index_3 = map(_3array.index, heapq.nlargest(20,_3array))
             temp = list(max_num_index_3)
-            count = 0
-            for a in range(len(temp)):
-                a = a - count
-                print("{} and temp_length is {}".format(a,len(temp)))
-
-                b = r[_3index[temp]][a][3]
-
-                b1 = r[_3index[temp]][a][0]
-                b2 = r[_3index[temp]][a][1]
-                b3 = r[_3index[temp]][a][2]
-                b4 = r[_3index[temp]][a][4]
-
-                if(( b > b1 + confidence) & ( b > b2 + confidence) & (b > b3 + confidence) &
-                (b > b4 + confidence ) ):
-                    print("yes")
-                    print("this time :{}".format(a))
-                else:
-                    temp = np.delete(temp,a)
-                    count = count + 1
-                    print("after minus count = {}".format(count))
-
             u3data = unlabel[_3index[temp]]
             print(np.shape(u3data))
-            print(r[_3index[temp]])
 
 
             _4index = np.where(mark == 4)[0]
             _4array = r[_4index][:,4].tolist()
-            max_num_index_4 = map(_4array.index, heapq.nlargest(num_select,_4array))
+            max_num_index_4 = map(_4array.index, heapq.nlargest(20,_4array))
             temp = list(max_num_index_4)
-            count = 0
-            for a in range(len(temp)):
-                a = a - count
-                print("{} and temp_length is {}".format(a,len(temp)))
-
-                b = r[_4index[temp]][a][4]
-                b1 = r[_4index[temp]][a][0]
-                b2 = r[_4index[temp]][a][1]
-                b3 = r[_4index[temp]][a][2]
-                b4 = r[_4index[temp]][a][3]
-
-                if(( b > b1 + confidence) & ( b > b2 + confidence) & (b > b3 + confidence) &
-                (b > b4 + confidence ) ):
-                    print("yes")
-                    print("this time :{}".format(a))
-                else:
-                    temp = np.delete(temp,a)
-                    count = count + 1
-                    print("after minus count = {}".format(count))
-
             u4data = unlabel[_4index[temp]]
-            print(r[_4index[temp]])
             print(np.shape(u4data))
-            sys.exit(0)
+
             unlabel_t = []
             unlabel_t = np.vstack((u0data,u1data))
             unlabel_t = np.vstack((unlabel_t,u2data))
             unlabel_t = np.vstack((unlabel_t,u3data))
             unlabel_t = np.vstack((unlabel_t,u4data))
-            unlabel_Y = np.zeros((num_select*5,),dtype = int)
-            unlabel_Y[:num_select] = 0
-            unlabel_Y[num_select:num_select*2] = 1
-            unlabel_Y[num_select*2:num_select*3] = 2
-            unlabel_Y[num_select*3:num_select*4] = 3
-            unlabel_Y[num_select*4:num_select*5] = 4
-            unlabel_t = np.vstack((unlabel_t, Train_X_tmp))
-            print(unlabel_Y)
-            unlabel_Y = np.hstack((unlabel_Y,Train_Y_tmp))
-            print(unlabel_Y)
-            print(np.shape(unlabel_t))
-            print(np.shape(unlabel_Y))
+            unlabel_Y = np.zeros((100,),dtype = int)
+            unlabel_Y[:20] = 0
+            unlabel_Y[20:40] = 1
+            unlabel_Y[40:60] = 2
+            unlabel_Y[60:80] = 3
+            unlabel_Y[80:100] = 4
+            # unlabel_t = np.vstack((unlabel_t, Train_X_tmp))
+            # print(unlabel_Y)
+            # unlabel_Y = np.hstack((unlabel_Y,Train_Y_tmp))
+            # print(unlabel_Y)
+            # print(np.shape(unlabel_t))
+            # print(np.shape(unlabel_Y))
             # print(unlabel_Y[4999])
             # sys.exit(0)
             # _1index = np.where(mark == 1)
@@ -373,8 +264,8 @@ for T in range(times):
             # print(len(np.argmax(r,axis=1)[np.argmax(r,axis=1) == 2]))
             # print(len(np.argmax(r,axis=1)[np.argmax(r,axis=1) == 3]))
             # print(len(np.argmax(r,axis=1)[np.argmax(r,axis=1) == 4]))
-            with open('/home/sxz/data/geolife_Data/pseudo_data4.pickle', 'wb') as f:
-                pickle.dump([unlabel_t, unlabel_Y], f)
+            # with open('/home/sxz/data/geolife_Data/pseudo_data4.pickle', 'wb') as f:
+            #     pickle.dump([unlabel_t, unlabel_Y], f)
                 # pseudo_data3是真正的纯粹伪标签
             # 每一类选择置信度最高的那一个点
             # sys.exit(0)
@@ -385,8 +276,6 @@ for T in range(times):
             print('\n')
             print('Confusin matrix: ', confusion_matrix(Test_Y_ori, y_pred_all[i2]))
             print('\n')
-            print(np.shape(unlabel_t))
-            print(np.shape(unlabel_Y))
             sys.exit(0)
 
 

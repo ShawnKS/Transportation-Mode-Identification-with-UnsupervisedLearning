@@ -18,44 +18,58 @@ from sklearn.metrics import accuracy_score, confusion_matrix, classification_rep
 x = np.ones((1, 2, 3))
 a = np.transpose(x, (1, 0, 2))
 
-filename = '/home/sxz/data/geolife_Data/e_Cross1.pickle'
-with open(filename, 'rb') as f:
-    Train_X, Train_Y,Test_X, Test_Y, Test_Y_ori = pickle.load(f)
-print(Train_X)
-# 这是表现差的
-print("aaaaaaaaaaaaaaaaaaaaaaa")
-filename = '/home/sxz/data/geolife_Data/Origin_data_Cross.pickle'
-# 这是表现好的
-with open(filename, 'rb') as f:
-    Train_X, Train_Y,Test_X, Test_Y, Test_Y_ori = pickle.load(f)
-print(Train_X)
-# 这是重新做的dataset
+# filename = '/home/sxz/data/geolife_Data/e_Cross1.pickle'
+# with open(filename, 'rb') as f:
+#     Train_X, Train_Y,Test_X, Test_Y, Test_Y_ori = pickle.load(f)
+# print(Train_X)
+# # 这是表现差的
+# print("aaaaaaaaaaaaaaaaaaaaaaa")
+# filename = '/home/sxz/data/geolife_Data/Origin_data_Cross.pickle'
+# # 这是表现好的
+# with open(filename, 'rb') as f:
+#     Train_X, Train_Y,Test_X, Test_Y, Test_Y_ori = pickle.load(f)
+# print(Train_X)
+# # 这是重新做的dataset
 filename = '/home/sxz/data/geolife_Data/My_data_for_DL_kfold_dataset_RL.pickle'
 with open(filename, 'rb') as f:
     kfold_dataset, label = pickle.load(f)
 # 这是伪标签拼出来的
-filename = '/home/sxz/data/geolife_Data/pseudo_data3.pickle'
+
+filename = '/home/sxz/data/geolife_Data/pseudo_data4.pickle'
 with open(filename, 'rb') as f:
     Train_X, Train_Y1 = pickle.load(f)
+Train_X = Train_X[100:244]
+Train_Y1 = Train_Y1[100:244]
 # Train_X = Train_X[100:]
 # Train_Y1 = Train_Y1[100:]
 # with open('/home/sxz/data/geolife_Data/test_Data.pickle', 'rb') as f:
 #     Test_X, Test_Y, Test_Y_ori = pickle.load(f)
 # print(np.shape(Train_X))
 # print(np.shape(Train_Y1))
+
+
+# Train_X = kfold_dataset[0][0]
+# Train_Y1 = kfold_dataset[0][1]
+# sample = np.random.choice(len( Train_X ) ,size=round(0.01*len(Train_X)), replace=False,p=None)
+# Train_X = Train_X[sample]
+# Train_Y1 = Train_Y1[sample]
+
+
+
 Train_Y = np.zeros((len(Train_Y1),5))
-
-# sample = np.random.choice(len( Train_X ) ,size=round(len(Train_X)), replace=False,p=None)
-
 for i in range(len(Train_Y1)):
     Train_Y[i][Train_Y1[i]] = 1
 print(Train_Y)
+print(Train_X)
+
 # Train_X = Train_X[:5]
 # Train_Y = Train_Y[:5]
-times = 2
+times = 4
 acc_all = 0
 acc_w_all = 0
+acc_count = [0,0,0,0]
 for i in range(times):
+
     tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True))
     # sess = print(tf.Session(config=tf.ConfigProto(log_device_placement=True)))
 
@@ -136,6 +150,7 @@ for i in range(times):
 
     Test_X = kfold_dataset[i][2]
     Test_Y = kfold_dataset[i][3]
+    print(Test_Y)
     Test_Y_ori = kfold_dataset[i][4]
 
     optimizer = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
@@ -147,7 +162,7 @@ for i in range(times):
     print('Val_accuracy', hist.history['val_acc'])
     print('optimal Epoch: ', np.argmax(hist.history['val_acc']))
     # Saving the test and training score for varying number of epochs.
-    with open('Revised_accuracy_history_largeEpoch_NoSmoothing.pickle', 'wb') as f:
+    with open('Revised_accuracy_history_largeEpoch_NoSmoothing1.pickle', 'wb') as f:
         pickle.dump([hist.epoch, hist.history['acc'], hist.history['val_acc']], f)
 
     A = np.argmax(hist.history['val_acc'])
@@ -161,6 +176,7 @@ for i in range(times):
 
 
     print('Test Accuracy %: ', accuracy_score(Test_Y_ori, y_pred))
+    acc_count[i] = accuracy_score(Test_Y_ori, y_pred)
     print('\n')
     print('Confusin matrix: ', confusion_matrix(Test_Y_ori, y_pred))
     print('\n')
@@ -181,5 +197,7 @@ for i in range(times):
     acc_w_all += acc_w
 fin = acc_all/times
 fin_w = acc_w_all/times
-print(fin)
-print(fin_w)
+print(np.mean(acc_count))
+print(acc_count)
+# print(fin)
+# print(fin_w)
