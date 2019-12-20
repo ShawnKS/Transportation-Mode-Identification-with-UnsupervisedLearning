@@ -59,7 +59,7 @@ for T in range(times):
 
 
         # Training and test set for GPS segments
-        prop = 1
+        prop = 12000/14000
         random.seed(7)
         np.random.seed(7)
         tf.set_random_seed(7)

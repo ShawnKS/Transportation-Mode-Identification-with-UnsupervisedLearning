@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import numpy as np
 import sys
@@ -39,9 +39,9 @@ with open(filename, 'rb') as f:
 times = 1
 acc_all = 0
 acc_w_all = 0
-for T in range(times):
+for T in range(1):
 
-    for i in range(len(kfold_dataset)):
+    for i in range(len(kfold_dataset)-4):
         tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True))
         # sess = print(tf.Session(config=tf.ConfigProto(log_device_placement=True)))
         start_time = time.clock()
@@ -50,7 +50,7 @@ for T in range(times):
 
 
         # Training and test set for GPS segments
-        prop = 0.01
+        prop = 1
         random.seed(7)
         np.random.seed(7)
         tf.set_random_seed(7)
@@ -126,7 +126,6 @@ for T in range(times):
             Train_Y[k][ori[k]] = 1
         Train_Y = Train_Y[random_sample]
         ori = ori[random_sample]
-
         # # 以下是只抽5个样本出来训练的结果
         # index = np.zeros((5,),dtype = int)
         # for i in range(5):
@@ -145,10 +144,27 @@ for T in range(times):
         # print(Train_Y[k][4])
         # sys.exit(0)
         Test_X = kfold_dataset1[i][2]
+        a = np.where(kfold_dataset1[i][4]==0)[0]
+        b = np.where(kfold_dataset1[i][4]==1)[0]
+        c = np.where(kfold_dataset1[i][4]==2)[0]
+        d = np.where(kfold_dataset1[i][4]==3)[0]
+        e = np.where(kfold_dataset1[i][4]==4)[0]
+        # a = a[:100]
+        # b = b[:100]
+        # c = c[:100]
+        # d = d[:100]
+        # e = e[:100]
+        a = np.hstack((a,b))
+        a = np.hstack((a,c))
+        a = np.hstack((a,d))
+        a = np.hstack((a,e))
         Test_Y = kfold_dataset1[i][3]
         Test_Y_ori = kfold_dataset1[i][4]
-
-        
+        Test_X = Test_X[a]
+        Test_Y = Test_Y[a]
+        Test_Y_ori = Test_Y_ori[a]
+        print(np.shape(Test_X))
+        # sys.exit(0)        
         
         
         y_pred_all = np.zeros((ensemble_num,len(Test_X)))
@@ -156,7 +172,7 @@ for T in range(times):
         for i2 in range(ensemble_num):
             model_all[i2].compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
             offline_history = model_all[i2].fit(Train_X, Train_Y, epochs=50, batch_size=512, shuffle=False,
-                                        validation_data=(Test_X, Test_Y))
+                                        validation_data=(Train_X[:500], Train_Y[:500]))
             hist = offline_history
             print('Val_accuracy', hist.history['val_acc'])
             print('optimal Epoch: ', np.argmax(hist.history['val_acc']))

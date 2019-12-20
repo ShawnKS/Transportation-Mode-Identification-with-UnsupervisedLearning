@@ -8,7 +8,7 @@ import pickle
 import tensorflow as tf
 import keras
 # Settings
-batch_size = 64
+batch_size = 40
 latent_dim = 800
 units = 800  # num unit in the MLP hidden layer
 num_dense = 0
@@ -87,7 +87,7 @@ def train_val_split(Train_X, Train_Y_ori):
     val_index = []
     for i in range(num_class):
         label_index = np.where(Train_Y_ori == i)[0]
-        val_index.append(label_index[:round(0.4*len(label_index))])
+        val_index.append(label_index[:round(0.1*len(label_index))])
     val_index = np.hstack(tuple([label for label in val_index]))
     Val_X = Train_X[val_index]
     Val_Y_ori = Train_Y_ori[val_index]
@@ -97,6 +97,8 @@ def train_val_split(Train_X, Train_Y_ori):
     Train_Y_ori = Train_Y_ori[train_index_]
     Train_Y = keras.utils.to_categorical(Train_Y_ori, num_classes=num_class)
     return Train_X, Train_Y, Train_Y_ori, Val_X, Val_Y, Val_Y_ori
+
+# def Mixup()
 
 
 def prediction_prob(Test_X, classifier_output, input_labeled, sess):
@@ -113,7 +115,7 @@ def prediction_prob(Test_X, classifier_output, input_labeled, sess):
 # ===================================
 
 
-def training(one_fold, seed, prop, num_filter, epochs=100):
+def training(one_fold, seed, prop, num_filter, epochs=50):
     Train_X = one_fold[0]
     Train_Y_ori = one_fold[1]
     Test_X = one_fold[2]
@@ -125,11 +127,11 @@ def training(one_fold, seed, prop, num_filter, epochs=100):
     c = np.where(Test_Y_ori==2)[0]
     d = np.where(Test_Y_ori==3)[0]
     e = np.where(Test_Y_ori==4)[0]
-    # a = a[:100]
-    # b = b[:100]
-    # c = c[:100]
-    # d = d[:100]
-    # e = e[:100]
+    a = a[:100]
+    b = b[:100]
+    c = c[:100]
+    d = d[:100]
+    e = e[:100]
     a = np.hstack((a,b))
     a = np.hstack((a,c))
     a = np.hstack((a,d))
@@ -145,9 +147,6 @@ def training(one_fold, seed, prop, num_filter, epochs=100):
     Train_Y_ori = Train_Y_ori[random_sample]
     #Train_X, Train_Y_ori = rand_stra_sample(Train_X, Train_Y_ori, prop)
     Train_X, Train_Y, Train_Y_ori, Val_X, Val_Y, Val_Y_ori = train_val_split(Train_X, Train_Y_ori)
-    # print(Train_X[:1])
-    # print(Train_Y[:1])
-    # sys.exit(0)
     input_size = list(np.shape(Test_X)[1:])
 
     val_accuracy = {-2: 0, -1: 0}
@@ -159,7 +158,7 @@ def training(one_fold, seed, prop, num_filter, epochs=100):
         true_label = tf.placeholder(tf.float32, shape=[None, num_class], name='true_label')
         loss_cls, accuracy_cls, train_op, classifier_output = cnn_model(input_labeled, true_label, num_filter)
         sess.run(tf.global_variables_initializer())
-        saver = tf.train.Saver(max_to_keep=100)
+        saver = tf.train.Saver(max_to_keep=60)
         num_batches = len(Train_X) // batch_size
         print(len(Train_X))
         print(num_batches)

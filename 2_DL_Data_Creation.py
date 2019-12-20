@@ -127,22 +127,15 @@ print(np.shape(X_unlabeled))
 
 
 def change_to_new_channel(input):
-    # 做K折交
-    # input1 = input[:, 0:1, :]
-    # input2 = input[:, 3:6, :]
-    input = input[:, 3:7, :]
-    # input = np.concatenate((input1, input2), axis=1)
+    input1 = input[:, 0:1, :]
+    input2 = input[:, 3:6, :]
+    input = np.concatenate((input1, input2), axis=1)
     total_input_new = np.zeros((len(input), 1, max_threshold, new_channel))
     for i in range(len(input)):
         total_input_new[i, 0, :, 0] = input[i, 0, :]
         total_input_new[i, 0, :, 1] = input[i, 1, :]
         total_input_new[i, 0, :, 2] = input[i, 2, :]
         total_input_new[i, 0, :, 3] = input[i, 3, :]
-        # print(input)
-        # print(np.shape(input))
-        # print(input[i])
-        # print(np.shape(input[i]))
-        # sys.exit(0)
         #total_input_new[i, 0, :, 4] = input[i, 4, :]
         #total_input_new[i, 0, :, 5] = input[i, 5, :]
 

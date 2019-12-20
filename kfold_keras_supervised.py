@@ -103,7 +103,8 @@ for T in range(times):
             # print(A)
             model.add(MaxPooling2D(pool_size=(1, 2)))
             A = model.output_shape
-            # print(A)
+            print(A)
+            # sys.exit(0)
             model.add(Dropout(.5))
             A = model.output_shape
             # print(A)

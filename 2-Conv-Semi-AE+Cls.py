@@ -36,7 +36,7 @@ padding = 'same'
 strides = 1
 pool_size = (1, 2)
 num_class = 5
-reg_l2 = tf.contrib.layers.l1_regularizer(scale=0.1)
+reg_l2 = tf.contrib.layers.l1_regularizer(scale=0.01)
 initializer = tf.contrib.layers.xavier_initializer(uniform=True, seed=None, dtype=tf.float32)
 #initializer = tf.truncated_normal_initializer()
 
@@ -265,6 +265,25 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     Test_X = one_fold[2]
     Test_Y = one_fold[3]
     Test_Y_ori = one_fold[4]
+    a = np.where(one_fold[4]==0)[0]
+    b = np.where(one_fold[4]==1)[0]
+    c = np.where(one_fold[4]==2)[0]
+    d = np.where(one_fold[4]==3)[0]
+    e = np.where(one_fold[4]==4)[0]
+    # a = a[:100]
+    # b = b[:100]
+    # c = c[:100]
+    # d = d[:100]
+    # e = e[:100]
+    a = np.hstack((a,b))
+    a = np.hstack((a,c))
+    a = np.hstack((a,d))
+    a = np.hstack((a,e))
+    Test_Y = one_fold[3]
+    Test_Y_ori = one_fold[4]
+    # Test_X = Test_X[a]
+    # Test_Y = Test_Y[a]
+    Test_Y_ori = Test_Y_ori[a]
     random_sample = np.random.choice(len(X_unlabeled), size=round(prop * len(X_unlabeled)), replace=False, p=None)
     X_unlabeled = X_unlabeled[random_sample]
     Train_X_Comb = X_unlabeled
@@ -301,7 +320,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
             # alfa_val1 = [0.0, 0.0, 1.0, 1.0, 1.0]
             # beta_val1 = [1.0, 1.0, 0.1, 0.1, 0.1]
             alfa_val = 1  ## 0
-            beta_val = 1
+            beta_val = 0.2
             change_to_ae = 1  # the value defines that algorithm is ready to change to joint ae-cls
             change_times = 0  # No. of times change from cls to ae-cls, which is 2 for this training strategy
             third_step = 0
@@ -378,7 +397,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                     save_path = "/Conv-Semi-TF-PS/" + '2/' + str(z) + '/' + str(prop) + '-' + str(max_acc)
                     saver.restore(sess, save_path)
                     num_epoch_ae_cls = k - num_epoch_cls_only - 1
-                    alfa_val = 1.5
+                    alfa_val = 1
                     beta_val = 0.2
                     change_times += 1  ##
                     change_to_ae = 1

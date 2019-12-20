@@ -1,13 +1,13 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "4"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import numpy as np
 import sys
-import keras
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Conv2D, Flatten, MaxPooling2D
+import tensorflow.keras
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout, Conv2D, Flatten, MaxPooling2D
 import pickle
-from keras.optimizers import Adam
+from tensorflow.keras.optimizers import Adam
 import os
 import random
 from sklearn.model_selection import train_test_split
@@ -38,8 +38,8 @@ with open(filename, 'rb') as f:
 filename = '/home/sxz/data/geolife_Data/pseudo_data4.pickle'
 with open(filename, 'rb') as f:
     Train_X, Train_Y1 = pickle.load(f)
-Train_X = Train_X[100:244]
-Train_Y1 = Train_Y1[100:244]
+# Train_X = Train_X[100:244]
+# Train_Y1 = Train_Y1[100:244]
 # Train_X = Train_X[100:]
 # Train_Y1 = Train_Y1[100:]
 # with open('/home/sxz/data/geolife_Data/test_Data.pickle', 'rb') as f:
@@ -143,7 +143,7 @@ for i in range(times):
     A = model.output_shape
     print(A)
     model.add(Dense(NoClass, activation='softmax'))
-    A = model.output_shape
+    A = model.output
     print(A)
     acc = 0
     acc_w = 0
@@ -156,7 +156,7 @@ for i in range(times):
     optimizer = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
     model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
-    offline_history = model.fit(Train_X, Train_Y, epochs=50, batch_size=256, shuffle=False,
+    offline_history = model.fit(Train_X, Train_Y, epochs=50, batch_size=64, shuffle=False,
                                 validation_data=(Test_X, Test_Y))
     hist = offline_history
     print('Val_accuracy', hist.history['val_acc'])
@@ -169,8 +169,11 @@ for i in range(times):
     print('the optimal epoch size: {}, the value of high accuracy {}'.format(hist.epoch[A], np.max(hist.history['val_acc'])))
 
     # Calculating the test accuracy, precision, recall
-
+    print(np.shape(Train_X))
     y_pred = np.argmax(model.predict(Test_X, batch_size=100), axis=1)
+    print(y_pred)
+    print(Train_Y)
+    sys.exit(0)
     print(y_pred)
     print(Test_Y_ori)
 

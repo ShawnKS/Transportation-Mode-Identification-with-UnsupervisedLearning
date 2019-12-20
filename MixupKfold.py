@@ -1,426 +1,440 @@
+from __future__ import print_function
+
+import argparse
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-import numpy as np
-import sys
-import keras
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Conv2D, Flatten, MaxPooling2D
-import pickle
-from keras.optimizers import Adam
-import os
-import random
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix
+import shutil
 import time
-import tensorflow as tf
-from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
-x = np.ones((1, 2, 3))
-a = np.transpose(x, (1, 0, 2))
-import heapq
+import random
 
-# filename = '/home/sxz/data/geolife_Data/Origin_data_Cross.pickle'
-# with open(filename, 'rb') as f:
-#     Train_X1, Train_Y1,Test_X1, Test_Y1, Test_Y_ori1 = pickle.load(f)
-filename = '/home/sxz/data/geolife_Data/My_data_for_DL_kfold_dataset_RL.pickle'
-with open(filename, 'rb') as f:
-    kfold_dataset1, unlabel = pickle.load(f)
+import numpy as np
 
-print(np.shape(unlabel))
-random_sample = np.random.choice(len(unlabel), size=int(0.1*len(unlabel)), replace=True, p=None)
-unlabel = unlabel[random_sample]
-# sys.exit(0)
+import torch
+import torch.nn as nn
+import torch.nn.parallel
+import torch.backends.cudnn as cudnn
+import torch.optim as optim
+import torch.utils.data as data
+import torchvision.transforms as transforms
+import torch.nn.functional as F
 
-filename = '/home/sxz/data/geolife_Data/My_data_for_DL_kfold_dataset_RL.pickle'
-with open(filename, 'rb') as f:
-    kfold_dataset, unlabel = pickle.load(f)
-# print(kfold_dataset[0][1])
-# print(len(kfold_dataset[0][1][kfold_dataset[0][1]==0]))
-# print(len(kfold_dataset[0][1][kfold_dataset[0][1]==1]))
-# print(len(kfold_dataset[0][1][kfold_dataset[0][1]==2]))
-# print(len(kfold_dataset[0][1][kfold_dataset[0][1]==3]))
-# print(len(kfold_dataset[0][1][kfold_dataset[0][1]==4]))
-# sys.exit(0)
-times = 1
-acc_all = 0
-acc_w_all = 0
-for T in range(times):
+import models.wideresnet as models
+import dataset.cifar10 as dataset
+from utils import Bar, Logger, AverageMeter, accuracy, mkdir_p, savefig
+from tensorboardX import SummaryWriter
 
-    for i in range(len(kfold_dataset)):
-        tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True))
-        # sess = print(tf.Session(config=tf.ConfigProto(log_device_placement=True)))
-        start_time = time.clock()
-        np.random.seed(7)
-        random.seed(7)
-
-
-        # Training and test set for GPS segments
-        prop = 0.01
-        random.seed(7)
-        np.random.seed(7)
-        tf.set_random_seed(7)
-        # index = np.arange(len(Train_X))
-        # np.random.shuffle(index)
-        # Train_X = Train_X[index[:round(prop*len(Train_X))]]
-        # Train_Y = Train_Y[index[:round(prop*len(Train_Y))]]
-        # #Train_X_Comb = np.vstack((Train_X, Train_X_Unlabel))
-        # random.shuffle(Train_X_Comb)
-
-        ensemble_num = 1
-        NoClass = 5
-        Threshold = 31
+parser = argparse.ArgumentParser(description='PyTorch MixMatch Training')
+# Optimization options
+parser.add_argument('--epochs', default=1024, type=int, metavar='N',
+                    help='number of total epochs to run')
+parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
+                    help='manual epoch number (useful on restarts)')
+parser.add_argument('--batch-size', default=64, type=int, metavar='N',
+                    help='train batchsize')
+parser.add_argument('--lr', '--learning-rate', default=0.002, type=float,
+                    metavar='LR', help='initial learning rate')
+# Checkpoints
+parser.add_argument('--resume', default='', type=str, metavar='PATH',
+                    help='path to latest checkpoint (default: none)')
+# Miscs
+parser.add_argument('--manualSeed', type=int, default=0, help='manual seed')
+#Device options
+parser.add_argument('--gpu', default='0', type=str,
+                    help='id(s) for CUDA_VISIBLE_DEVICES')
+#Method options
+parser.add_argument('--n-labeled', type=int, default=250,
+                        help='Number of labeled data')
+parser.add_argument('--val-iteration', type=int, default=1024,
+                        help='Number of labeled data')
+parser.add_argument('--out', default='result',
+                        help='Directory to output the result')
+parser.add_argument('--alpha', default=0.75, type=float)
+parser.add_argument('--lambda-u', default=75, type=float)
+parser.add_argument('--T', default=0.5, type=float)
+parser.add_argument('--ema-decay', default=0.999, type=float)
 
 
+args = parser.parse_args()
+state = {k: v for k, v in args._get_kwargs()}
 
-        model_all = []
-        for i1 in range(ensemble_num):
-        # Model and Compile
-            model = Sequential()
-            activ = 'relu'
-            model.add(Conv2D(32, (1, 3), strides=(1, 1), padding='same', activation=activ, input_shape=(1, 248, 4)))
-            A = model.output_shape
-            # print(A)
-            model.add(Conv2D(32, (1, 3), strides=(1, 1), padding='same', activation=activ))
-            A = model.output_shape
-            # print(A)
-            model.add(MaxPooling2D(pool_size=(1, 2)))
-            A = model.output_shape
-            # print(A)
-            model.add(Conv2D(64, (1, 3), strides=(1, 1), padding='same', activation=activ))
-            A = model.output_shape
-            # print(A)
-            model.add(Conv2D(64, (1, 3), strides=(1, 1), padding='same', activation=activ))
-            A = model.output_shape
-            # print(A)
-            model.add(MaxPooling2D(pool_size=(1, 2)))
-            A = model.output_shape
-            # print(A)
-            model.add(Conv2D(128, (1, 3), strides=(1, 1), padding='same', activation=activ))
-            A = model.output_shape
-            # print(A)
-            model.add(Conv2D(128, (1, 3), strides=(1, 1), padding='same', activation=activ))
-            A = model.output_shape
-            # print(A)
-            model.add(MaxPooling2D(pool_size=(1, 2)))
-            A = model.output_shape
-            # print(A)
-            model.add(Dropout(.5))
-            A = model.output_shape
-            # print(A)
-            model.add(Flatten())
-            A = model.output_shape
-            model.add(Dense(int(A[1] * 1/4.), activation=activ))
-            A = model.output_shape
-            model.add(Dropout(.5))
-            A = model.output_shape
-            model.add(Dense(NoClass, activation='softmax'))
-            A = model.output_shape
-            model_all.append(model)
-        print(model_all)
-        acc = 0
-        acc_w =0
-        optimizer = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-        Train_X = kfold_dataset[i][0]
+# Use CUDA
+os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+use_cuda = torch.cuda.is_available()
 
-        random_sample = np.random.choice(len(Train_X), size=int(prop*len(Train_X)), replace=True, p=None)
-        Train_X = Train_X[random_sample]
-        ori = kfold_dataset[i][1]
+# Random seed
+if args.manualSeed is None:
+    args.manualSeed = random.randint(1, 10000)
+np.random.seed(args.manualSeed)
 
+best_acc = 0  # best test accuracy
 
+def main():
+    global best_acc
 
-        Train_Y = np.zeros([len(kfold_dataset[i][0]) , 5])
+    if not os.path.isdir(args.out):
+        mkdir_p(args.out)
+
+    # Data
+    print(f'==> Preparing cifar10')
+    transform_train = transforms.Compose([
+        dataset.RandomPadandCrop(32),
+        dataset.RandomFlip(),
+        dataset.ToTensor(),
+    ])
+
+    transform_val = transforms.Compose([
+        dataset.ToTensor(),
+    ])
+
+    train_labeled_set, train_unlabeled_set, val_set, test_set = dataset.get_cifar10('./data', args.n_labeled, transform_train=transform_train, transform_val=transform_val)
+    print(np.shape(train_lbaeled_set))
+    print(np.shape(train_unlabeled_set))
+    print(np.shape(val_set))
+    print(np.shape(test_set))
+    labeled_trainloader = data.DataLoader(train_labeled_set, batch_size=args.batch_size, shuffle=True, num_workers=0, drop_last=True)
+    unlabeled_trainloader = data.DataLoader(train_unlabeled_set, batch_size=args.batch_size, shuffle=True, num_workers=0, drop_last=True)
+    val_loader = data.DataLoader(val_set, batch_size=args.batch_size, shuffle=False, num_workers=0)
+    test_loader = data.DataLoader(test_set, batch_size=args.batch_size, shuffle=False, num_workers=0)
+
+    # Model
+    print("==> creating WRN-28-2")
+
+    def create_model(ema=False):
+        model = models.WideResNet(num_classes=10)
+        model = model.cuda()
+
+        if ema:
+            for param in model.parameters():
+                param.detach_()
+                # EMA exponential moving average 指数移动平均
+        return model
+
+    model = create_model()
+    ema_model = create_model(ema=True)
+
+    cudnn.benchmark = True
+    print('    Total params: %.2fM' % (sum(p.numel() for p in model.parameters())/1000000.0))
+
+    train_criterion = SemiLoss()
+    # 半监督loss
+    criterion = nn.CrossEntropyLoss()
+    # 交叉熵loss
+    optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    # classifier的optimizer
+    ema_optimizer= WeightEMA(model, ema_model, alpha=args.ema_decay)
+    # EMA模型的optimizer
+    start_epoch = 0
+
+    # Resume
+    title = 'noisy-cifar-10'
+    if args.resume:
+        # Load checkpoint.
+        print('==> Resuming from checkpoint..')
+        assert os.path.isfile(args.resume), 'Error: no checkpoint directory found!'
+        args.out = os.path.dirname(args.resume)
+        checkpoint = torch.load(args.resume)
+        best_acc = checkpoint['best_acc']
+        start_epoch = checkpoint['epoch']
+        model.load_state_dict(checkpoint['state_dict'])
+        ema_model.load_state_dict(checkpoint['ema_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer'])
+        logger = Logger(os.path.join(args.out, 'log.txt'), title=title, resume=True)
+    else:
+        logger = Logger(os.path.join(args.out, 'log.txt'), title=title)
+        logger.set_names(['Train Loss', 'Train Loss X', 'Train Loss U',  'Valid Loss', 'Valid Acc.', 'Test Loss', 'Test Acc.'])
+
+    writer = SummaryWriter(args.out)
+    step = 0
+    test_accs = []
+    # Train and val
+    for epoch in range(start_epoch, args.epochs):
+
+        print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, state['lr']))
+
+        train_loss, train_loss_x, train_loss_u = train(labeled_trainloader, unlabeled_trainloader, model, optimizer, ema_optimizer, train_criterion, epoch, use_cuda)
+        _, train_acc = validate(labeled_trainloader, ema_model, criterion, epoch, use_cuda, mode='Train Stats')
+        val_loss, val_acc = validate(val_loader, ema_model, criterion, epoch, use_cuda, mode='Valid Stats')
+        test_loss, test_acc = validate(test_loader, ema_model, criterion, epoch, use_cuda, mode='Test Stats ')
+
+        step = args.batch_size * args.val_iteration * (epoch + 1)
+
+        writer.add_scalar('losses/train_loss', train_loss, step)
+        writer.add_scalar('losses/valid_loss', val_loss, step)
+        writer.add_scalar('losses/test_loss', test_loss, step)
+
+        writer.add_scalar('accuracy/train_acc', train_acc, step)
+        writer.add_scalar('accuracy/val_acc', val_acc, step)
+        writer.add_scalar('accuracy/test_acc', test_acc, step)
         
-        for k in range(len(kfold_dataset[i][0])):
-            Train_Y[k][ori[k]] = 1
-        Train_Y = Train_Y[random_sample]
-        ori = ori[random_sample]
+        # scheduler.step()
 
-        # 以下是只抽5个样本出来训练的结果
-        # index = np.zeros((5,),dtype = int)
-        # for i in range(5):
-        #     print(i)
-        #     print(np.where( ori == i )[0])
-        #     index[i] = np.where( ori == i)[0][0]
-        # print(index)
-        # Train_X = Train_X[index]
-        # Train_Y = Train_Y[index]
-        
-        Train_X_tmp = Train_X
-        # Train_Y_tmp = ori[index]
-        Train_Y_tmp = ori
+        # append logger file
+        logger.append([train_loss, train_loss_x, train_loss_u, val_loss, val_acc, test_loss, test_acc])
 
-        # print(Train_Y)
-        # print(np.where(Train_Y==[1,0,0,0,0] ))
-        # print(Train_Y[k][2])
-        # print(Train_Y[k][3])
-        # print(Train_Y[k][4])
-        # sys.exit(0)
-        Test_X = kfold_dataset1[i][2]
-        Test_Y = kfold_dataset1[i][3]
-        Test_Y_ori = kfold_dataset1[i][4]
+        # save model
+        is_best = val_acc > best_acc
+        best_acc = max(val_acc, best_acc)
+        save_checkpoint({
+                'epoch': epoch + 1,
+                'state_dict': model.state_dict(),
+                'ema_state_dict': ema_model.state_dict(),
+                'acc': val_acc,
+                'best_acc': best_acc,
+                'optimizer' : optimizer.state_dict(),
+            }, is_best)
+        test_accs.append(test_acc)
+    logger.close()
+    writer.close()
 
-        print(Train_Y)
-        print(Train_X)
+    print('Best acc:')
+    print(best_acc)
 
-        
-        
-        y_pred_all = np.zeros((ensemble_num,len(Test_X)))
+    print('Mean acc:')
+    print(np.mean(test_accs[-20:]))
 
-        for i2 in range(ensemble_num):
-            model_all[i2].compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-            offline_history = model_all[i2].fit(Train_X, Train_Y, epochs=50, batch_size=512, shuffle=False,
-                                        validation_data=(Test_X, Test_Y))
-            hist = offline_history
-            print('Val_accuracy', hist.history['val_acc'])
-            print('optimal Epoch: ', np.argmax(hist.history['val_acc']))
-            # Saving the test and training score for varying number of epochs.
-            with open('Revised_accuracy_history_largeEpoch_NoSmoothing.pickle', 'wb') as f:
-                pickle.dump([hist.epoch, hist.history['acc'], hist.history['val_acc']], f)
 
-            A = np.argmax(hist.history['val_acc'])
-            print('the optimal epoch size: {}, the value of high accuracy {}'.format(hist.epoch[A], np.max(hist.history['val_acc'])))
+def train(labeled_trainloader, unlabeled_trainloader, model, optimizer, ema_optimizer, criterion, epoch, use_cuda):
 
-            r = model_all[i2].predict(unlabel,batch_size=1000)
-            print(r)
-            print(np.argmax(r,axis=1))
-            mark = np.argmax(r,axis=1)
-            # 选择每一个输入对应概率最大数
+    batch_time = AverageMeter()
+    data_time = AverageMeter()
+    losses = AverageMeter()
+    losses_x = AverageMeter()
+    losses_u = AverageMeter()
+    ws = AverageMeter()
+    # averageMeter()是一个非常方便的辅助函数,AverageMeter 类追踪训练的状态比如准确率和循环次数。accuracy 
+    # 函数计算并返还模型的 top-k 准确率这样我们就可以跟踪学习进程。 这两个都是为了训练方便而不是为分布式训练特别设定的。
+    end = time.time()
 
-            num_select = 20
-            confidence = 0.3
+    bar = Bar('Training', max=args.val_iteration)
+    labeled_train_iter = iter(labeled_trainloader)
+    unlabeled_train_iter = iter(unlabeled_trainloader)
 
-            _0index = np.where(mark == 0)[0]
-            print(np.shape(mark))
-            print(np.shape(_0index))
-            print(_0index)
-            print(r[_0index][:,0])
-            _0array = r[_0index][:,0].tolist()
-            max_num_index_0 = map(_0array.index, heapq.nlargest(num_select,_0array))
-            temp = list(max_num_index_0)
-            print(np.shape(_0index))
-            print(temp)
-            count = 0  
-            for a in range(len(temp)):
-                a = a - count
-                print("{} and temp_length is {}".format(a,len(temp)))
+    
+    model.train()
+    for batch_idx in range(args.val_iteration):
+        try:
+            inputs_x, targets_x = labeled_train_iter.next()
+        except:
+            labeled_train_iter = iter(labeled_trainloader)
+            inputs_x, targets_x = labeled_train_iter.next()
 
-                b = r[_0index[temp]][a][0]
+        try:
+            (inputs_u, inputs_u2), _ = unlabeled_train_iter.next()
+        except:
+            unlabeled_train_iter = iter(unlabeled_trainloader)
+            (inputs_u, inputs_u2), _ = unlabeled_train_iter.next()
 
-                b1 = r[_0index[temp]][a][1]
-                b2 = r[_0index[temp]][a][2]
-                b3 = r[_0index[temp]][a][3]
-                b4 = r[_0index[temp]][a][4]
+        # measure data loading time
+        data_time.update(time.time() - end)
 
-                if(( b > b1 + confidence) & ( b > b2 + confidence) & (b > b3 + confidence) &
-                (b > b4 + confidence ) ):
-                    print("yes")
-                    print("this time :{}".format(a))
-                else:
-                    temp = np.delete(temp,a)
-                    count = count + 1
-                    print("after minus count = {}".format(count))
-            #_0index[temp]就是置信度最高的指定个数的unlabel的点
+        batch_size = inputs_x.size(0)
 
-            u0data = unlabel[_0index[temp]]
-            print(r[_0index[temp]])
+        # Transform label to one-hot
+        targets_x = torch.zeros(batch_size, 10).scatter_(1, targets_x.view(-1,1), 1)
 
-            print(np.shape(u0data))
+        if use_cuda:
+            inputs_x, targets_x = inputs_x.cuda(), targets_x.cuda(non_blocking=True)
+            inputs_u = inputs_u.cuda()
+            inputs_u2 = inputs_u2.cuda()
 
-            _1index = np.where(mark == 1)[0]
-            _1array = r[_1index][:,1].tolist()
-            max_num_index_1 = map(_1array.index, heapq.nlargest(num_select,_1array))
-            temp = list(max_num_index_1)
-            # 对应值的最大前N在预测出来的数组中对应的索引为_Nindex[temp]
-            print(r[_1index[temp]])
-            count = 0
-            for a in range(len(temp)):
-                a = a - count
-                print("{} and temp_length is {}".format(a,len(temp)))
 
-                b = r[_1index[temp]][a][1]
+        with torch.no_grad():
+            # compute guessed labels of unlabel samples
+            outputs_u = model(inputs_u)
+            outputs_u2 = model(inputs_u2)
+            p = (torch.softmax(outputs_u, dim=1) + torch.softmax(outputs_u2, dim=1)) / 2
+            pt = p**(1/args.T)
+            targets_u = pt / pt.sum(dim=1, keepdim=True)
+            targets_u = targets_u.detach()
 
-                b1 = r[_1index[temp]][a][0]
-                b2 = r[_1index[temp]][a][2]
-                b3 = r[_1index[temp]][a][3]
-                b4 = r[_1index[temp]][a][4]
+        # mixup
+        all_inputs = torch.cat([inputs_x, inputs_u, inputs_u2], dim=0)
+        all_targets = torch.cat([targets_x, targets_u, targets_u], dim=0)
 
-                if(( b > b1 + confidence) & ( b > b2 + confidence) & (b > b3 + confidence) &
-                (b > b4 + confidence ) ):
-                    print("yes")
-                    print("this time :{}".format(a))
-                else:
-                    temp = np.delete(temp,a)
-                    count = count + 1
-                    print("after minus count = {}".format(count))
-            u1data = unlabel[_1index[temp]]
+        l = np.random.beta(args.alpha, args.alpha)
+
+        l = max(l, 1-l)
+
+        idx = torch.randperm(all_inputs.size(0))
+
+        input_a, input_b = all_inputs, all_inputs[idx]
+        target_a, target_b = all_targets, all_targets[idx]
+
+        mixed_input = l * input_a + (1 - l) * input_b
+        mixed_target = l * target_a + (1 - l) * target_b
+
+        # interleave labeled and unlabed samples between batches to get correct batchnorm calculation 
+        mixed_input = list(torch.split(mixed_input, batch_size))
+        mixed_input = interleave(mixed_input, batch_size)
+
+        logits = [model(mixed_input[0])]
+        for input in mixed_input[1:]:
+            logits.append(model(input))
+
+        # put interleaved samples back
+        logits = interleave(logits, batch_size)
+        logits_x = logits[0]
+        logits_u = torch.cat(logits[1:], dim=0)
+
+        Lx, Lu, w = criterion(logits_x, mixed_target[:batch_size], logits_u, mixed_target[batch_size:], epoch+batch_idx/args.val_iteration)
+
+        loss = Lx + w * Lu
+
+        # record loss
+        losses.update(loss.item(), inputs_x.size(0))
+        losses_x.update(Lx.item(), inputs_x.size(0))
+        losses_u.update(Lu.item(), inputs_x.size(0))
+        ws.update(w, inputs_x.size(0))
+
+        # compute gradient and do SGD step
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        ema_optimizer.step()
+
+        # measure elapsed time
+        batch_time.update(time.time() - end)
+        end = time.time()
+
+        # plot progress
+        bar.suffix  = '({batch}/{size}) Data: {data:.3f}s | Batch: {bt:.3f}s | Total: {total:} | ETA: {eta:} | Loss: {loss:.4f} | Loss_x: {loss_x:.4f} | Loss_u: {loss_u:.4f} | W: {w:.4f}'.format(
+                    batch=batch_idx + 1,
+                    size=args.val_iteration,
+                    data=data_time.avg,
+                    bt=batch_time.avg,
+                    total=bar.elapsed_td,
+                    eta=bar.eta_td,
+                    loss=losses.avg,
+                    loss_x=losses_x.avg,
+                    loss_u=losses_u.avg,
+                    w=ws.avg,
+                    )
+        bar.next()
+    bar.finish()
+
+    ema_optimizer.step(bn=True)
+
+    return (losses.avg, losses_x.avg, losses_u.avg,)
+
+def validate(valloader, model, criterion, epoch, use_cuda, mode):
+
+    batch_time = AverageMeter()
+    data_time = AverageMeter()
+    losses = AverageMeter()
+    top1 = AverageMeter()
+    top5 = AverageMeter()
+
+    # switch to evaluate mode
+    model.eval()
+
+    end = time.time()
+    bar = Bar(f'{mode}', max=len(valloader))
+    with torch.no_grad():
+        for batch_idx, (inputs, targets) in enumerate(valloader):
+            # measure data loading time
+            data_time.update(time.time() - end)
+
+            if use_cuda:
+                inputs, targets = inputs.cuda(), targets.cuda(non_blocking=True)
             
-            print(r[_1index[temp]])
-            print(np.shape(u1data))
+            # compute output
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
+
+            # measure accuracy and record loss
+            prec1, prec5 = accuracy(outputs, targets, topk=(1, 5))
+            losses.update(loss.item(), inputs.size(0))
+            top1.update(prec1.item(), inputs.size(0))
+            top5.update(prec5.item(), inputs.size(0))
+
+            # measure elapsed time
+            batch_time.update(time.time() - end)
+            end = time.time()
+
+            # plot progress
+            bar.suffix  = '({batch}/{size}) Data: {data:.3f}s | Batch: {bt:.3f}s | Total: {total:} | ETA: {eta:} | Loss: {loss:.4f} | top1: {top1: .4f} | top5: {top5: .4f}'.format(
+                        batch=batch_idx + 1,
+                        size=len(valloader),
+                        data=data_time.avg,
+                        bt=batch_time.avg,
+                        total=bar.elapsed_td,
+                        eta=bar.eta_td,
+                        loss=losses.avg,
+                        top1=top1.avg,
+                        top5=top5.avg,
+                        )
+            bar.next()
+        bar.finish()
+    return (losses.avg, top1.avg)
+
+def save_checkpoint(state, is_best, checkpoint=args.out, filename='checkpoint.pth.tar'):
+    filepath = os.path.join(checkpoint, filename)
+    torch.save(state, filepath)
+    if is_best:
+        shutil.copyfile(filepath, os.path.join(checkpoint, 'model_best.pth.tar'))
+
+def linear_rampup(current, rampup_length=args.epochs):
+    if rampup_length == 0:
+        return 1.0
+    else:
+        current = np.clip(current / rampup_length, 0.0, 1.0)
+        return float(current)
+
+class SemiLoss(object):
+    def __call__(self, outputs_x, targets_x, outputs_u, targets_u, epoch):
+        probs_u = torch.softmax(outputs_u, dim=1)
+
+        Lx = -torch.mean(torch.sum(F.log_softmax(outputs_x, dim=1) * targets_x, dim=1))
+        Lu = torch.mean((probs_u - targets_u)**2)
+
+        return Lx, Lu, args.lambda_u * linear_rampup(epoch)
+
+class WeightEMA(object):
+    def __init__(self, model, ema_model, alpha=0.999):
+        self.model = model
+        self.ema_model = ema_model
+        self.alpha = alpha
+        self.tmp_model = models.WideResNet(num_classes=10).cuda()
+        self.wd = 0.02 * args.lr
+
+        for param, ema_param in zip(self.model.parameters(), self.ema_model.parameters()):
+            ema_param.data.copy_(param.data)
+
+    def step(self, bn=False):
+        if bn:
+            # copy batchnorm stats to ema model
+            for ema_param, tmp_param in zip(self.ema_model.parameters(), self.tmp_model.parameters()):
+                tmp_param.data.copy_(ema_param.data.detach())
+
+            self.ema_model.load_state_dict(self.model.state_dict())
+
+            for ema_param, tmp_param in zip(self.ema_model.parameters(), self.tmp_model.parameters()):
+                ema_param.data.copy_(tmp_param.data.detach())
+        else:
+            one_minus_alpha = 1.0 - self.alpha
+            for param, ema_param in zip(self.model.parameters(), self.ema_model.parameters()):
+                ema_param.data.mul_(self.alpha)
+                ema_param.data.add_(param.data.detach() * one_minus_alpha)
+                # customized weight decay
+                param.data.mul_(1 - self.wd)
+
+def interleave_offsets(batch, nu):
+    groups = [batch // (nu + 1)] * (nu + 1)
+    for x in range(batch - sum(groups)):
+        groups[-x - 1] += 1
+    offsets = [0]
+    for g in groups:
+        offsets.append(offsets[-1] + g)
+    assert offsets[-1] == batch
+    return offsets
 
 
-            _2index = np.where(mark == 2)[0]
-            _2array = r[_2index][:,2].tolist()
-            max_num_index_2 = map(_2array.index, heapq.nlargest(num_select,_2array))
-            temp = list(max_num_index_2)
-            count = 0
-            for a in range(len(temp)):
-                a = a - count
-                print("{} and temp_length is {}".format(a,len(temp)))
+def interleave(xy, batch):
+    nu = len(xy) - 1
+    offsets = interleave_offsets(batch, nu)
+    xy = [[v[offsets[p]:offsets[p + 1]] for p in range(nu + 1)] for v in xy]
+    for i in range(1, nu + 1):
+        xy[0][i], xy[i][i] = xy[i][i], xy[0][i]
+    return [torch.cat(v, dim=0) for v in xy]
 
-                b = r[_2index[temp]][a][2]
-                b1 = r[_2index[temp]][a][0]
-                b2 = r[_2index[temp]][a][1]
-                b3 = r[_2index[temp]][a][3]
-                b4 = r[_2index[temp]][a][4]
-
-                if(( b > b1 + confidence) & ( b > b2 + confidence) & (b > b3 + confidence) &
-                (b > b4 + confidence ) ):
-                    print("yes")
-                    print("this time :{}".format(a))
-                else:
-                    temp = np.delete(temp,a)
-                    count = count + 1
-                    print("after minus count = {}".format(count))
-
-            u2data = unlabel[_2index[temp]]
-            print(np.shape(u2data))
-            print(r[_2index[temp]])
-
-            _3index = np.where(mark == 3)[0]
-            _3array = r[_3index][:,3].tolist()
-            max_num_index_3 = map(_3array.index, heapq.nlargest(num_select,_3array))
-            temp = list(max_num_index_3)
-            count = 0
-            for a in range(len(temp)):
-                a = a - count
-                print("{} and temp_length is {}".format(a,len(temp)))
-
-                b = r[_3index[temp]][a][3]
-
-                b1 = r[_3index[temp]][a][0]
-                b2 = r[_3index[temp]][a][1]
-                b3 = r[_3index[temp]][a][2]
-                b4 = r[_3index[temp]][a][4]
-
-                if(( b > b1 + confidence) & ( b > b2 + confidence) & (b > b3 + confidence) &
-                (b > b4 + confidence ) ):
-                    print("yes")
-                    print("this time :{}".format(a))
-                else:
-                    temp = np.delete(temp,a)
-                    count = count + 1
-                    print("after minus count = {}".format(count))
-
-            u3data = unlabel[_3index[temp]]
-            print(np.shape(u3data))
-            print(r[_3index[temp]])
-
-
-            _4index = np.where(mark == 4)[0]
-            _4array = r[_4index][:,4].tolist()
-            max_num_index_4 = map(_4array.index, heapq.nlargest(num_select,_4array))
-            temp = list(max_num_index_4)
-            count = 0
-            for a in range(len(temp)):
-                a = a - count
-                print("{} and temp_length is {}".format(a,len(temp)))
-
-                b = r[_4index[temp]][a][4]
-                b1 = r[_4index[temp]][a][0]
-                b2 = r[_4index[temp]][a][1]
-                b3 = r[_4index[temp]][a][2]
-                b4 = r[_4index[temp]][a][3]
-
-                if(( b > b1 + confidence) & ( b > b2 + confidence) & (b > b3 + confidence) &
-                (b > b4 + confidence ) ):
-                    print("yes")
-                    print("this time :{}".format(a))
-                else:
-                    temp = np.delete(temp,a)
-                    count = count + 1
-                    print("after minus count = {}".format(count))
-
-            u4data = unlabel[_4index[temp]]
-            print(r[_4index[temp]])
-            print(np.shape(u4data))
-            sys.exit(0)
-            unlabel_t = []
-            unlabel_t = np.vstack((u0data,u1data))
-            unlabel_t = np.vstack((unlabel_t,u2data))
-            unlabel_t = np.vstack((unlabel_t,u3data))
-            unlabel_t = np.vstack((unlabel_t,u4data))
-            unlabel_Y = np.zeros((num_select*5,),dtype = int)
-            unlabel_Y[:num_select] = 0
-            unlabel_Y[num_select:num_select*2] = 1
-            unlabel_Y[num_select*2:num_select*3] = 2
-            unlabel_Y[num_select*3:num_select*4] = 3
-            unlabel_Y[num_select*4:num_select*5] = 4
-            unlabel_t = np.vstack((unlabel_t, Train_X_tmp))
-            print(unlabel_Y)
-            unlabel_Y = np.hstack((unlabel_Y,Train_Y_tmp))
-            print(unlabel_Y)
-            print(np.shape(unlabel_t))
-            print(np.shape(unlabel_Y))
-            # print(unlabel_Y[4999])
-            # sys.exit(0)
-            # _1index = np.where(mark == 1)
-            # _2index = np.where(mark == 2)
-            # _3index = np.where(mark == 3)
-            # _4index = np.where(mark == 4)
-            # max_1000_0 = map(_0index.index,heapq.nlargest(1000,))
-            # print(len(np.argmax(r,axis=1)[np.argmax(r,axis=1) == 0]))
-            # print(len(np.argmax(r,axis=1)[np.argmax(r,axis=1) == 1]))
-            # print(len(np.argmax(r,axis=1)[np.argmax(r,axis=1) == 2]))
-            # print(len(np.argmax(r,axis=1)[np.argmax(r,axis=1) == 3]))
-            # print(len(np.argmax(r,axis=1)[np.argmax(r,axis=1) == 4]))
-            with open('/home/sxz/data/geolife_Data/pseudo_data4.pickle', 'wb') as f:
-                pickle.dump([unlabel_t, unlabel_Y], f)
-                # pseudo_data3是真正的纯粹伪标签
-            # 每一类选择置信度最高的那一个点
-            # sys.exit(0)
-
-            # Calculating the test accuracy, precision, recall
-            y_pred_all[i2] = np.argmax(model_all[i2].predict(Test_X, batch_size=100), axis=1)
-            print('Test Accuracy %: ', accuracy_score(Test_Y_ori, y_pred_all[i2]))
-            print('\n')
-            print('Confusin matrix: ', confusion_matrix(Test_Y_ori, y_pred_all[i2]))
-            print('\n')
-            print(np.shape(unlabel_t))
-            print(np.shape(unlabel_Y))
-            sys.exit(0)
-
-
-
-        # print(y_pred_all)
-        y_pred_ens = np.zeros((len(Test_Y_ori),5))
-        for jj in range(ensemble_num):
-            for jji in range(len(Test_X)):
-                y_pred_ens[jji][int(y_pred_all[jj][jji])] += 1
-        # print(y_pred_ens)
-        y_pred_final = np.argmax(y_pred_ens, axis = 1)
-        print(Test_Y_ori)
-
-        print('Test Accuracy %: ', accuracy_score(Test_Y_ori, y_pred_final))
-        print('\n')
-        print('Confusin matrix: ', confusion_matrix(Test_Y_ori, y_pred_final))
-        print('\n')
-        sys.exit(0)
-        print(classification_report(Test_Y_ori, y_pred_final, digits=3))
-        report = classification_report(Test_Y_ori, y_pred_final, digits=3)
-        report = report.splitlines()
-        res = []
-        res.append(['']+report[0].split())
-        for row in report[2:-3]:
-            res.append(row.split())
-        lr = report[-1].split()
-        res.append([' '.join(lr[:3])]+lr[3:])
-        acc_w += float(res[7][0].split(' ')[2])
-        acc_w_all += acc_w
-        for ii in range(5):
-            acc += float(res[ii+1][1])
-        print(acc)
-        acc_all += acc/5
-fin = acc_all/(times*5)
-fin_w = acc_w_all/(times*5)
-print(fin)
-print(fin_w)
+if __name__ == '__main__':
+    main()

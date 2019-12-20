@@ -4,7 +4,9 @@ import random
 import pickle
 import tensorflow as tf
 import keras
-
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 # Settings
 latent_dim = 800
 batch_size = 100
@@ -22,13 +24,15 @@ reg_l2 = tf.contrib.layers.l1_regularizer(scale=0.1)
 initializer = tf.contrib.layers.xavier_initializer(uniform=True, seed=None, dtype=tf.float32)
 #initializer = tf.truncated_normal_initializer()
 
-filename = '../Mode-codes-Revised/paper2_data_for_DL_kfold_dataset.pickle'
+filename = '/home/sxz/data/geolife_Data/My_data_for_DL_kfold_dataset_RL.pickle'
 with open(filename, 'rb') as f:
     kfold_dataset, X_unlabeled = pickle.load(f)
 
 # Encoder Network
 
-
+@tf.function
+def sharpen(p, T):
+    return tf.pow(p, 1/T) / tf.reduce_sum(tf.pow(p, 1/T), axis=1, keepdims=True)
 def encoder_network(latent_dim, num_filter, input_combined, input_unlabeled, input_labeled):
     encoded_combined = input_combined
     encoded_labeled = input_labeled
@@ -63,6 +67,7 @@ def encoder_network(latent_dim, num_filter, input_combined, input_unlabeled, inp
     return latent_combined, latent_labeled, latent_unlabled, layers_shape
 
 # # Decoder Network
+
 
 
 def decoder_network(latent_combined, input_size, kernel_size, padding, activation, num_filter):
@@ -112,6 +117,48 @@ def decoder_network(latent_combined, input_size, kernel_size, padding, activatio
 
     return decoded_combined
 
+def classifier_mlp_cr(latent_labeled, latent_unlabeled, num_class, num_fliter_cls, num_dense, num_filter):
+    conv_layer_l = latent_labeled
+    conv_layer_ul = latent_unlabeled
+
+    for i in range(len(num_fliter_cls)):
+        scope_name = 'cls_set_' + str(i + 1)
+        with tf.variable_scope(scope_name):
+            conv_layer_l = tf.layers.conv2d(inputs=conv_layer_l, activation=tf.nn.relu, filters=num_filter_cls[i],
+                                  kernel_size=kernel_size, strides=strides, padding=padding, kernel_initializer=initializer, name='conv')
+        with tf.variable_scope(scope_name, reuse=True):
+            conv_layer_ul = tf.layers.conv2d(inputs=conv_layer_ul, activation=tf.nn.relu, filters=num_filter_cls[i],
+                                          kernel_size=kernel_size, strides=strides, padding=padding, kernel_initializer=initializer, name='conv')
+        if len(num_filter) % 2 == 0:
+            if i % 2 != 0:
+                conv_layer_l = tf.layers.max_pooling2d(conv_layer_l, pool_size=pool_size,strides=pool_size, name='pool')
+                conv_layer_ul = tf.layers.max_pooling2d(conv_layer_ul, pool_size=pool_size,strides=pool_size, name='pool')
+
+        else:
+            if i % 2 == 0:
+                conv_layer_l = tf.layers.max_pooling2d(conv_layer_l, pool_size=pool_size,strides=pool_size, name='pool')
+                conv_layer_ul = tf.layers.max_pooling2d(conv_layer_ul, pool_size=pool_size,strides=pool_size, name='pool')
+
+    dense_l = tf.layers.flatten(conv_layer_l)
+    dense_ul = tf.layers.flatten(conv_layer_ul)
+    units = int(dense_l.get_shape().as_list()[-1] / 4)
+    for i in range(num_dense):
+        scope_name = 'dense_set_' + str(i + 1)
+        with tf.variable_scope(scope_name):
+            dense_l = tf.layers.dense(dense_l, units, activation=tf.nn.relu)
+        with tf.variable_scope(scope_name, reuse=True):
+            dense_ul = tf.layers.dense(dense_ul, units, activation=tf.nn.relu)
+
+        units /= 2
+    dense_last = dense_l
+    dense_l = tf.layers.dropout(dense_l, 0.5)
+    dense_ul = tf.layers.dropout(dense_ul, 0.5)
+    scope_name = 'FC_set_'
+    with tf.variable_scope(scope_name):
+        classifier_output_l = tf.layers.dense(dense_l, num_class, name='FC_4')
+    with tf.variable_scope(scope_name, reuse=True):
+        classifier_output_ul = tf.layers.dense(dense_ul, num_class, name='FC_4')
+    return classifier_output_l, classifier_output_ul, dense_last
 
 def classifier_mlp(latent_labeled, latent_unlabeled, num_class, num_fliter_cls, num_dense, num_filter):
     conv_layer_l = latent_labeled
@@ -160,6 +207,9 @@ def classifier_mlp(latent_labeled, latent_unlabeled, num_class, num_fliter_cls, 
 def semi_supervised(input_labeled, input_unlabeled, input_combined, true_label_l, true_label_ul, alpha, gama, beta, alpha_cls, beta_cls, num_class, latent_dim, num_filter, input_size):
     latent_combined, latent_labeled, latent_unlabled, layers_shape = encoder_network(latent_dim, num_filter, input_combined=input_combined, input_unlabeled=input_unlabeled, input_labeled=input_labeled)
     decoded_output = decoder_network(latent_combined=latent_combined, input_size=input_size, kernel_size=kernel_size, padding=padding, activation=activation, num_filter=num_filter)
+    # 在这里加一致性正则
+    # print(latent_unlabeled)
+    # sys.exit(0)
     classifier_output_l, classifier_output_ul, dense_last = classifier_mlp(latent_labeled=latent_labeled, latent_unlabeled=latent_unlabled, num_class=num_class, num_fliter_cls=num_filter_cls, num_dense=num_dense, num_filter=num_filter)
 
     loss_ae = tf.reduce_mean(tf.square(input_combined - decoded_output), name='loss_ae') * 100
@@ -201,9 +251,12 @@ def get_labeled_index(train_x_comb, train_x):
     labeled_index.append(np.arange(len(train_x_comb) % len(train_x)))
     return np.concatenate(labeled_index)
 
+import sys
 
 def pseudo_label(X_ul, sess, classifier_output_ul, input_unlabeled):
     prediction = sess.run(tf.nn.softmax(classifier_output_ul), feed_dict={input_unlabeled: X_ul})
+    # print(prediction)
+    # sys.exit(0)
     #Y_ul = sess.run(tf.one_hot(prediction, depth=num_class))
     return prediction
 
@@ -254,12 +307,12 @@ def prediction_prob(Test_X, classifier_output, input_labeled, sess):
     y_pred = np.argmax(prediction, axis=1)
     return y_pred
 
-def training(one_fold, X_unlabeled, seed, prop, num_filter, epochs_ae=10, epochs_cls=20):
+def training(one_fold, X_unlabeled, seed, prop, num_filter, epochs_ae=10, epochs_cls=100):
     Train_X = one_fold[0]
     Train_Y_ori = one_fold[1]
     random.seed(seed)
     np.random.seed(seed)
-    random_sample = np.random.choice(len(Train_X), size=round(0.5*len(Train_X)), replace=False, p=None)
+    random_sample = np.random.choice(len(Train_X), size=round(0.1*len(Train_X)), replace=False, p=None)
     Train_X = Train_X[random_sample]
     Train_Y_ori = Train_Y_ori[random_sample]
     Train_X, Train_Y, Train_Y_ori, Val_X, Val_Y, Val_Y_ori = train_val_split(Train_X, Train_Y_ori)
@@ -292,7 +345,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter, epochs_ae=10, epochs
         num_batches = len(Train_X_Comb) // batch_size
 
         sess.run(tf.global_variables_initializer())
-        saver = tf.train.Saver(max_to_keep=20)
+        saver = tf.train.Saver(max_to_keep=100)
         '''
         for k in range(epochs_ae):
             num_batches = len(Train_X_Comb) // batch_size
@@ -316,21 +369,31 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter, epochs_ae=10, epochs
         val_accuracy = {-2: 0, -1: 0}
         val_loss = {-2: 10, -1: 10}
         alfa_val = 1
-        beta_val = 1
+        beta_val = 0.5
         change_to_ae = 1  # the value defines that algorithm is ready to change to joint ae-cls
         change_times = 0  # No. of times change from cls to ae-cls
         for k in range(epochs_cls):
             x_unlabeled_index = get_combined_index(train_x_comb=Train_X_Unlabel)
             x_labeled_index = get_labeled_index(train_x_comb=Train_X_Unlabel, train_x=Train_X)
+            # print(len(x_labeled_index))
+            l = 0.5
+            # T = 0.5
+            # 为什么不把无标签数据直接作为有标签数据的噪音呢？
             # x_labeled_index = np.arange(len(Train_X))
-            for i in range(num_batches):
+            for i in range(num_batches):        
                 unlab_index_range = x_unlabeled_index[i * batch_size: (i + 1) * batch_size]
                 lab_index_range = x_labeled_index[i * batch_size: (i + 1) * batch_size]
                 X_ul = Train_X_Unlabel[unlab_index_range]
+                # print(X_ul.dtype)
                 Y_ul = pseudo_label(X_ul, sess, classifier_output_ul, input_unlabeled)
+                # print(Y_ul.dtype)
+                # sys.exit(0)
                 X_l = Train_X[lab_index_range]
                 Y_l = Train_Y[lab_index_range]
+                # X_ul = X_l*l+X_ul*(1-l)
+                # Y_ul = Y_l*l+Y_ul*(1-l)
                 accuracy_cls_l_, _ = sess.run([accuracy_cls_l, train_op_cls],
+                # train_op_cls是pseudo-label model的值
                                               feed_dict={alpha: alfa_val, beta: beta_val, input_labeled: X_l,
                                                          input_unlabeled: X_ul, true_label_l: Y_l, true_label_ul: Y_ul})
                 #print('Epoch Num {}, Batches Num {}, accuracy_cls_l {}'.format
@@ -338,8 +401,14 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter, epochs_ae=10, epochs
 
             unlab_index_range = x_unlabeled_index[(i + 1) * batch_size:]
             lab_index_range = x_labeled_index[(i + 1) * batch_size:]
+            # 这里获得pseudo label
             X_ul = Train_X_Unlabel[unlab_index_range]
             Y_ul = pseudo_label(X_ul, sess, classifier_output_ul, input_unlabeled)
+            # Y = sharpen(Y_ul,T)
+            # # print(Y)
+            # Y_ul = tf.Session().run(Y)
+            # print(np.sum(Y_ul,axis=1))
+            # sys.exit(0)
             X_l = Train_X[lab_index_range]
             Y_l = Train_Y[lab_index_range]
             accuracy_cls_l_, _ = sess.run([accuracy_cls_l, train_op_cls], feed_dict={alpha: alfa_val, beta: beta_val,
@@ -354,7 +423,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter, epochs_ae=10, epochs
             val_loss.update({k: loss_val})
             val_accuracy.update({k: acc_val})
             print('====================================================')
-            saver.save(sess, "/Conv-Semi-TF-PS/" + str(prop), global_step=k)
+            saver.save(sess, "/home/sxz/cnv-TF/pseudo/" + str(prop), global_step=k)
             # save_path = "/Conv-Semi/" + str(prop) + '/' + str(k) + ".ckpt"
             # checkpoint = os.path.join(os.getcwd(), save_path)
             # saver.save(sess, checkpoint)
@@ -365,7 +434,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter, epochs_ae=10, epochs
                 # save_path = "/Conv-Semi/" + str(prop) + '/' + str(k-1) + ".ckpt"
                 # checkpoint = os.path.join(os.getcwd(), save_path)
                 max_acc = max(val_accuracy.items(), key=lambda k: k[1])[0]
-                save_path = "/Conv-Semi-TF-PS/" + str(prop) + '-' + str(max_acc)
+                save_path = "/home/sxz/cnv-TF/pseudo/" + str(prop) + '-' + str(max_acc)
                 saver.restore(sess, save_path)
                 alfa_val = 1.5
                 beta_val = 0.1
@@ -382,7 +451,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter, epochs_ae=10, epochs
                 # #checkpoint = os.path.join(os.getcwd(), save_path)
                 max_acc = max(val_accuracy.items(), key=lambda k: k[1])[0]
                 # saver.restore(sess, "/Conv-Semi-TF-PS/" + str(prop) + '/' + str(max_acc) + ".ckpt")
-                save_path = "/Conv-Semi-TF-PS/" + str(prop) + '-' + str(max_acc)
+                save_path = "/home/sxz/cnv-TF/pseudo/" + str(prop) + '-' + str(max_acc)
                 saver.restore(sess, save_path)
                 alfa_val = 1
                 beta_val = 0.2
@@ -426,12 +495,12 @@ def training_all_folds(label_proportions, num_filter):
         mean_std_metrics[index] = [mean_metrics, std_metrics]
     for index, prop in enumerate(label_proportions):
         print('All Test Accuracy For Semi-AE+Cls with Prop {} are: {}'.format(prop, test_accuracy_fold[index]))
-        print('Semi-AE+Cls test accuracy for prop {}: Mean {}, std {}'.format(prop, mean_std_acc[index][0], mean_std_acc[index][1]))
-        print('Semi-AE+Cls test metrics for prop {}: Mean {}, std {}'.format(prop, mean_std_metrics[index][0], mean_std_metrics[index][1]))
+        print('Semi-AE+Cls test accuracy for unlabel prop {}: Mean {}, std {}'.format(prop, mean_std_acc[index][0], mean_std_acc[index][1]))
+        print('Semi-AE+Cls test metrics for unlabel prop {}: Mean {}, std {}'.format(prop, mean_std_metrics[index][0], mean_std_metrics[index][1]))
         print('\n')
     return test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics
 
-test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(label_proportions=[0.15, 0.35],
+test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(label_proportions=[0.35],
                                                   num_filter=[32, 32, 64, 64])
 a = 1
 
