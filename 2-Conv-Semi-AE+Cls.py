@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import numpy as np
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
@@ -451,4 +451,4 @@ def training_all_folds(label_proportions, num_filter):
     return test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics
 
 test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(
-    label_proportions=[0.01,0.1], num_filter=[32, 32, 64, 64])
+    label_proportions=[0.02], num_filter=[32, 32, 64, 64])

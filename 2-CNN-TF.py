@@ -137,6 +137,8 @@ def training(one_fold, seed, prop, num_filter, epochs=100):
     Test_X = Test_X[a]
     Test_Y = Test_Y[a]
     Test_Y_ori = Test_Y_ori[a]
+    Test_Y = one_fold[3]
+    Test_Y_ori = one_fold[4]
 
     random.seed(seed)
     np.random.seed(seed)
@@ -240,7 +242,7 @@ def training_all_folds(label_proportions, num_filter):
         print('\n')
     return test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics
 
-test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(label_proportions=[0.01,0.1,0.5,1],
+test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(label_proportions=[0.01,0.1,0.25,0.5,1],
                                                   num_filter=[32, 32, 64, 64, 128, 128])
 
 

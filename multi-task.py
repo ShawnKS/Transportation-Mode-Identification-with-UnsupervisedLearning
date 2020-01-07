@@ -5,7 +5,7 @@ import pickle
 import tensorflow as tf
 import keras
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 # Settings
 latent_dim = 800
@@ -207,9 +207,6 @@ def classifier_mlp(latent_labeled, latent_unlabeled, num_class, num_fliter_cls, 
 def semi_supervised(input_labeled, input_unlabeled, input_combined, true_label_l, true_label_ul, alpha, gama, beta, alpha_cls, beta_cls, num_class, latent_dim, num_filter, input_size):
     latent_combined, latent_labeled, latent_unlabled, layers_shape = encoder_network(latent_dim, num_filter, input_combined=input_combined, input_unlabeled=input_unlabeled, input_labeled=input_labeled)
     decoded_output = decoder_network(latent_combined=latent_combined, input_size=input_size, kernel_size=kernel_size, padding=padding, activation=activation, num_filter=num_filter)
-    # 在这里加一致性正则
-    # print(latent_unlabeled)
-    # sys.exit(0)
     classifier_output_l, classifier_output_ul, dense_last = classifier_mlp(latent_labeled=latent_labeled, latent_unlabeled=latent_unlabled, num_class=num_class, num_fliter_cls=num_filter_cls, num_dense=num_dense, num_filter=num_filter)
 
     loss_ae = tf.reduce_mean(tf.square(input_combined - decoded_output), name='loss_ae') * 100
@@ -219,7 +216,7 @@ def semi_supervised(input_labeled, input_unlabeled, input_combined, true_label_l
                               name='loss_cls_ul')
     total_loss_ae_cls = alpha*loss_ae + beta*loss_cls_l
     #total_loss_cls = alpha_cls * loss_cls_ul + beta_cls * loss_cls_l
-    total_loss_cls = alpha * loss_cls_ul + beta * loss_cls_l
+    total_loss_cls = loss_cls_l
     total_loss_all = alpha*loss_ae + gama*loss_cls_ul + beta*loss_cls_l
     loss_reg = tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, 'EasyNet'))
     train_op_ae = tf.train.AdamOptimizer().minimize(loss_ae)
@@ -376,26 +373,28 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter, epochs_ae=10, epochs
             x_unlabeled_index = get_combined_index(train_x_comb=Train_X_Unlabel)
             x_labeled_index = get_labeled_index(train_x_comb=Train_X_Unlabel, train_x=Train_X)
             # print(len(x_labeled_index))
-            l = 0.5
+            l = 1
             # T = 0.5
             # 为什么不把无标签数据直接作为有标签数据的噪音呢？
             # x_labeled_index = np.arange(len(Train_X))
             for i in range(num_batches):        
-                unlab_index_range = x_unlabeled_index[i * batch_size: (i + 1) * batch_size]
+                unlab_index_range = np.random.choice(len(X_unlabeled), size=batch_size , replace=True, p=None)
                 lab_index_range = x_labeled_index[i * batch_size: (i + 1) * batch_size]
                 X_ul = Train_X_Unlabel[unlab_index_range]
-                # print(X_ul.dtype)
-                Y_ul = pseudo_label(X_ul, sess, classifier_output_ul, input_unlabeled)
-                # print(Y_ul.dtype)
-                # sys.exit(0)
                 X_l = Train_X[lab_index_range]
                 Y_l = Train_Y[lab_index_range]
+                # print(X_ul.dtype)
+                # Y_ul = pseudo_label(X_ul, sess, classifier_output_ul, input_unlabeled)
+                X_mixed = l * X_ul + (1-l) * X_l
+                Y_mixed = pseudo_label(X_mixed, sess, classifier_output_ul, input_unlabeled)
+                # print(Y_ul.dtype)
+                # sys.exit(0)
                 # X_ul = X_l*l+X_ul*(1-l)
                 # Y_ul = Y_l*l+Y_ul*(1-l)
                 accuracy_cls_l_, _ = sess.run([accuracy_cls_l, train_op_cls],
                 # train_op_cls是pseudo-label model的值
                                               feed_dict={alpha: alfa_val, beta: beta_val, input_labeled: X_l,
-                                                         input_unlabeled: X_ul, true_label_l: Y_l, true_label_ul: Y_ul})
+                                                         input_unlabeled: X_mixed, true_label_l: Y_l, true_label_ul: Y_mixed})
                 #print('Epoch Num {}, Batches Num {}, accuracy_cls_l {}'.format
                       #(k, i, accuracy_cls_l_))
 
@@ -403,19 +402,21 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter, epochs_ae=10, epochs
             lab_index_range = x_labeled_index[(i + 1) * batch_size:]
             # 这里获得pseudo label
             X_ul = Train_X_Unlabel[unlab_index_range]
+            X_l = Train_X[lab_index_range]
+            Y_l = Train_Y[lab_index_range]
             Y_ul = pseudo_label(X_ul, sess, classifier_output_ul, input_unlabeled)
+            X_mixed = l * X_ul + (1-l) * X_l
+            Y_mixed = pseudo_label(X_mixed, sess, classifier_output_ul, input_unlabeled)
             # Y = sharpen(Y_ul,T)
             # # print(Y)
             # Y_ul = tf.Session().run(Y)
             # print(np.sum(Y_ul,axis=1))
             # sys.exit(0)
-            X_l = Train_X[lab_index_range]
-            Y_l = Train_Y[lab_index_range]
             accuracy_cls_l_, _ = sess.run([accuracy_cls_l, train_op_cls], feed_dict={alpha: alfa_val, beta: beta_val,
                                                                                      input_labeled: X_l,
-                                                                                     input_unlabeled: X_ul,
+                                                                                     input_unlabeled: X_mixed,
                                                                                      true_label_l: Y_l,
-                                                                                     true_label_ul: Y_ul})
+                                                                                     true_label_ul: Y_mixed})
             print('Epoch Num {}, Batches Num {}, accuracy_cls_l {}'.format
                   (k, i, accuracy_cls_l_))
             print('====================================================')
@@ -500,7 +501,7 @@ def training_all_folds(label_proportions, num_filter):
         print('\n')
     return test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics
 
-test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(label_proportions=[0.01,0.1,0.25,0.5,1],
+test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(label_proportions=[0.5],
                                                   num_filter=[32, 32, 64, 64])
 a = 1
 
