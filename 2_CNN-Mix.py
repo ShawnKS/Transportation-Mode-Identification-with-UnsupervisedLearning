@@ -1,6 +1,6 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import numpy as np
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 import random
@@ -201,7 +201,7 @@ def semi_supervised(input_labeled, input_combined, input_mixed, true_label, mixe
                             name = 'loss_cons')
     loss_cls = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=true_label, logits=classifier_output),
                               name='loss_cls')
-    total_loss = alpha*loss_ae + beta*loss_cls + loss_cons
+    total_loss = alpha*loss_ae + beta*loss_cls + 1.2*loss_cons
     # 层数相同=参数数目相同=梯度可以相加同时求导
     #total_loss = beta * loss_ae + alpha * loss_cls
     loss_reg = tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES, 'EasyNet'))
@@ -290,7 +290,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     Train_Y_ori = one_fold[1]
     random.seed(seed)
     np.random.seed(seed)
-    random_sample = np.random.choice(len(Train_X), size=round(0.5*len(Train_X)), replace=False, p=None)
+    random_sample = np.random.choice(len(Train_X), size=round(0.2*len(Train_X)), replace=False, p=None)
     Train_X = Train_X[random_sample]
     Train_Y_ori = Train_Y_ori[random_sample]
     Train_X, Train_Y, Train_Y_ori, Val_X, Val_Y, Val_Y_ori = train_val_split(Train_X, Train_Y_ori)
@@ -377,6 +377,12 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                     Y_cls = Train_Y[lab_index_range]
                     X_mixed = l*X_ae + (1-l)*X_cls
                     Y_mixed = pseudo_label(X_mixed, sess, classifier_output2 , input_mixed)
+                    # print(Y_mixed)
+                    # Y_mixed = sharpen(Y_mixed,T=4)
+                    # Y_mixed = tf.Session().run(Y_mixed)
+                    # print("1111111111111")
+                    # print(tf.Session().run(Y_mixed))
+                    # sys.exit(0)
                     loss_ae_, loss_cls_, accuracy_cls_, _ = sess.run([loss_ae, loss_cls, accuracy_cls, train_op],
                                                                      feed_dict={alpha: alfa_val, beta: beta_val,
                                                                                 input_combined: X_ae,
@@ -395,6 +401,8 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                 Y_cls = Train_Y[lab_index_range]
                 X_mixed = l*X_ae + (1-l) * X_cls
                 Y_mixed = pseudo_label(X_mixed, sess, classifier_output2, input_mixed)
+                # Y_mixed = sharpen(Y_mixed,T=4)
+                # Y_mixed = tf.Session().run(Y_mixed)
                 loss_ae_, loss_cls_, accuracy_cls_, _ = sess.run([loss_ae, loss_cls, accuracy_cls, train_op],
                                                                  feed_dict={alpha: alfa_val, beta: beta_val,
                                                                             input_combined: X_ae,
@@ -452,7 +460,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                     val_loss.update({key: val_loss[k]})
                     #val_accuracy.update({k: val_accuracy[max_acc] - 0.001})  ##
                     #val_loss.update({k: val_loss[max_acc] + 0.001})  ##
-                if change_times == 4: ##
+                if change_times == 3: ##
                     break
 
             print("Ensemble {}: Val_Accu ae+cls Over Epochs {}: ".format(z, val_accuracy))
@@ -497,4 +505,4 @@ def training_all_folds(label_proportions, num_filter):
     return test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics
 
 test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(
-    label_proportions=[0.02], num_filter=[32, 32, 64, 64])
+    label_proportions=[0.15], num_filter=[32, 32, 64, 64])

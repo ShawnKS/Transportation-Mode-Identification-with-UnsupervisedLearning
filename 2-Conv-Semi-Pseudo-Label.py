@@ -5,7 +5,7 @@ import pickle
 import tensorflow as tf
 import keras
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "4"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 # Settings
 latent_dim = 800
@@ -500,7 +500,7 @@ def training_all_folds(label_proportions, num_filter):
         print('\n')
     return test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics
 
-test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(label_proportions=[0.01,0.1,0.25,0.5,1],
+test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(label_proportions=[0.1,0.2],
                                                   num_filter=[32, 32, 64, 64])
 a = 1
 

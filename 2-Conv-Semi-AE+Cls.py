@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import numpy as np
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
@@ -258,7 +258,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
     Train_Y_ori = one_fold[1]
     random.seed(seed)
     np.random.seed(seed)
-    random_sample = np.random.choice(len(Train_X), size=round(0.5*len(Train_X)), replace=False, p=None)
+    random_sample = np.random.choice(len(Train_X), size=round(0.2*len(Train_X)), replace=False, p=None)
     Train_X = Train_X[random_sample]
     Train_Y_ori = Train_Y_ori[random_sample]
     Train_X, Train_Y, Train_Y_ori, Val_X, Val_Y, Val_Y_ori = train_val_split(Train_X, Train_Y_ori)
@@ -316,6 +316,10 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
             # Train_X, Train_Y = ensemble_train_set(orig_Train_X, orig_Train_Y)
             val_accuracy = {-2: 0, -1: 0}
             val_loss = {-2: 10, -1: 10}
+            # 只用50% 就可以到 80%的准确率
+            # print(len(Train_X_Comb))
+            # print(len(Train_X))
+            # sys.exit(0)
             num_batches = len(Train_X_Comb) // batch_size
             # alfa_val1 = [0.0, 0.0, 1.0, 1.0, 1.0]
             # beta_val1 = [1.0, 1.0, 0.1, 0.1, 0.1]
@@ -451,4 +455,4 @@ def training_all_folds(label_proportions, num_filter):
     return test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics
 
 test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(
-    label_proportions=[0.02], num_filter=[32, 32, 64, 64])
+    label_proportions=[0.15], num_filter=[32, 32, 64, 64])
