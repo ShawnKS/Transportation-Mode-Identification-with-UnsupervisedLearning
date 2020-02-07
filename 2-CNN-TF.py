@@ -113,7 +113,7 @@ def prediction_prob(Test_X, classifier_output, input_labeled, sess):
 # ===================================
 
 
-def training(one_fold, seed, prop, num_filter, epochs=20):
+def training(one_fold, seed, prop, num_filter, epochs=30):
     Train_X = one_fold[0]
     Train_Y_ori = one_fold[1]
     Test_X = one_fold[2]
@@ -191,7 +191,7 @@ def training(one_fold, seed, prop, num_filter, epochs=20):
         print("Val Accuracy Over Epochs: ", val_accuracy)
         print("Val Loss Over Epochs: ", val_loss)
         max_accuracy_val = max(val_accuracy.items(), key=lambda k: k[1])
-        if(prop == 0.01):
+        if(prop == 0.02):
             saver.restore(sess, "/home/sxz/cnv-TF/" + str(prop) + str(max_accuracy_val[0]))
         else:
             saver.restore(sess, "/home/sxz/cnv-TF/" + str(prop) + '-' + str(max_accuracy_val[0]))
@@ -237,12 +237,13 @@ def training_all_folds(label_proportions, num_filter):
         mean_std_metrics[index] = [mean_metrics, std_metrics]
     for index, prop in enumerate(label_proportions):
         print('All Test Accuracy For Semi-AE+Cls with Prop {} are: {}'.format(prop, test_accuracy_fold[index]))
+        print('All Test Accuracy Metrics For Semi-AE+Cls with Prop {} are: {}'.format(prop, test_metrics_fold[index]))
         print('Semi-AE+Cls test accuracy for prop {}: Mean {}, std {}'.format(prop, mean_std_acc[index][0], mean_std_acc[index][1]))
         print('Semi-AE+Cls test metrics for prop {}: Mean {}, std {}'.format(prop, mean_std_metrics[index][0], mean_std_metrics[index][1]))
         print('\n')
     return test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics
 
-test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(label_proportions=[0.01],
+test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(label_proportions=[0.28],
                                                   num_filter=[32, 32, 64, 64, 128, 128])
 
 
