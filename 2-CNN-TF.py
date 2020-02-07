@@ -191,7 +191,7 @@ def training(one_fold, seed, prop, num_filter, epochs=30):
         print("Val Accuracy Over Epochs: ", val_accuracy)
         print("Val Loss Over Epochs: ", val_loss)
         max_accuracy_val = max(val_accuracy.items(), key=lambda k: k[1])
-        if(prop == 0.02):
+        if(prop == 0.03):
             saver.restore(sess, "/home/sxz/cnv-TF/" + str(prop) + str(max_accuracy_val[0]))
         else:
             saver.restore(sess, "/home/sxz/cnv-TF/" + str(prop) + '-' + str(max_accuracy_val[0]))
@@ -243,7 +243,7 @@ def training_all_folds(label_proportions, num_filter):
         print('\n')
     return test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics
 
-test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(label_proportions=[0.28],
+test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(label_proportions=[0.05],
                                                   num_filter=[32, 32, 64, 64, 128, 128])
 
 
