@@ -87,7 +87,7 @@ def train_val_split(Train_X, Train_Y_ori):
     val_index = []
     for i in range(num_class):
         label_index = np.where(Train_Y_ori == i)[0]
-        val_index.append(label_index[:round(0.4*len(label_index))])
+        val_index.append(label_index[:round(0.1*len(label_index))])
     val_index = np.hstack(tuple([label for label in val_index]))
     Val_X = Train_X[val_index]
     Val_Y_ori = Train_Y_ori[val_index]
@@ -113,7 +113,7 @@ def prediction_prob(Test_X, classifier_output, input_labeled, sess):
 # ===================================
 
 
-def training(one_fold, seed, prop, num_filter, epochs=100):
+def training(one_fold, seed, prop, num_filter, epochs=20):
     Train_X = one_fold[0]
     Train_Y_ori = one_fold[1]
     Test_X = one_fold[2]
@@ -242,7 +242,7 @@ def training_all_folds(label_proportions, num_filter):
         print('\n')
     return test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics
 
-test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(label_proportions=[0.01,0.1,0.25,0.5,1],
+test_accuracy_fold, test_metrics_fold, mean_std_acc, mean_std_metrics = training_all_folds(label_proportions=[0.01],
                                                   num_filter=[32, 32, 64, 64, 128, 128])
 
 

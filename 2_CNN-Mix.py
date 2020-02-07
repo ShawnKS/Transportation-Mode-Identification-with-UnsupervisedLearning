@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "1"
 import numpy as np
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
@@ -212,7 +212,7 @@ def semi_supervised(input_labeled, input_combined, input_mixed, true_label, mixe
 
     correct_prediction = tf.equal(tf.argmax(true_label, 1), tf.argmax(classifier_output, 1))
     accuracy_cls = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-    return loss_ae, loss_cls, accuracy_cls, train_op_ae, train_op_cls, classifier_output,classifier_output2, dense, train_op, total_loss
+    return loss_ae, loss_cls,loss_cons, accuracy_cls, train_op_ae, train_op_cls, classifier_output,classifier_output2, dense, train_op, total_loss
 
 
 def get_combined_index(train_x_comb):
@@ -341,7 +341,7 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
             beta = tf.placeholder(tf.float32, shape=(), name='beta')
 
             num_filter_ae_cls = num_filter_ae_cls_all[z]
-            loss_ae, loss_cls, accuracy_cls, train_op_ae, train_op_cls, classifier_output,classifier_output2, dense, train_op, total_loss = semi_supervised(
+            loss_ae, loss_cls,loss_cons, accuracy_cls, train_op_ae, train_op_cls, classifier_output,classifier_output2, dense, train_op, total_loss = semi_supervised(
                 input_labeled=input_labeled, input_combined=input_combined,input_mixed=input_mixed,
                 mixed_label=mixed_label, true_label=true_label, alpha=alpha,
                 beta=beta, num_class=num_class, latent_dim=latent_dim, num_filter_ae_cls=num_filter_ae_cls,
@@ -377,13 +377,14 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                     Y_cls = Train_Y[lab_index_range]
                     X_mixed = l*X_ae + (1-l)*X_cls
                     Y_mixed = pseudo_label(X_mixed, sess, classifier_output2 , input_mixed)
+                    # Y_mixed = Y_cls
                     # print(Y_mixed)
                     # Y_mixed = sharpen(Y_mixed,T=4)
                     # Y_mixed = tf.Session().run(Y_mixed)
                     # print("1111111111111")
                     # print(tf.Session().run(Y_mixed))
                     # sys.exit(0)
-                    loss_ae_, loss_cls_, accuracy_cls_, _ = sess.run([loss_ae, loss_cls, accuracy_cls, train_op],
+                    loss_ae_, loss_cls_,loss_cons_, accuracy_cls_,  _ = sess.run([loss_ae, loss_cls, loss_cons, accuracy_cls, train_op],
                                                                      feed_dict={alpha: alfa_val, beta: beta_val,
                                                                                 input_combined: X_ae,
                                                                                 # 应该是X_ae
@@ -400,18 +401,19 @@ def training(one_fold, X_unlabeled, seed, prop, num_filter_ae_cls_all, epochs_ae
                 X_cls = Train_X[lab_index_range]
                 Y_cls = Train_Y[lab_index_range]
                 X_mixed = l*X_ae + (1-l) * X_cls
-                Y_mixed = pseudo_label(X_mixed, sess, classifier_output2, input_mixed)
+                Y_mixed = pseudo_label(X_mixed, sess, classifier_output2 , input_mixed)
+                # Y_mixed = Y_cls
                 # Y_mixed = sharpen(Y_mixed,T=4)
                 # Y_mixed = tf.Session().run(Y_mixed)
-                loss_ae_, loss_cls_, accuracy_cls_, _ = sess.run([loss_ae, loss_cls, accuracy_cls, train_op],
+                loss_ae_, loss_cls_,loss_cons_, accuracy_cls_, _ = sess.run([loss_ae, loss_cls, loss_cons, accuracy_cls, train_op],
                                                                  feed_dict={alpha: alfa_val, beta: beta_val,
                                                                             input_combined: X_ae,
                                                                             input_labeled: X_cls,
                                                                             input_mixed: X_mixed,
                                                                             mixed_label: Y_mixed,
                                                                             true_label: Y_cls})
-                print('Epoch Num {}, Batches Num {}, Loss_AE {}, Loss_cls {}, Accuracy_train {}'.format
-                      (k, i, np.round(loss_ae_, 3), np.round(loss_cls_, 3), np.round(accuracy_cls_, 3)))
+                print('Epoch Num {}, Batches Num {}, Loss_AE {}, Loss_cls {},Loss_cons{}, Accuracy_train {}'.format
+                      (k, i, np.round(loss_ae_, 3), np.round(loss_cls_, 3), np.round(loss_cons_, 3),np.round(accuracy_cls_, 3)))
 
                 print('====================================================')
                 loss_val, acc_val = loss_acc_evaluation(Val_X, Val_Y, loss_cls, accuracy_cls, input_labeled, true_label, k, sess)

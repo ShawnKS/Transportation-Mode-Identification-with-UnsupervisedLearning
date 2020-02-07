@@ -25,7 +25,7 @@ filename = '../Mode-codes-Revised/paper2_data_for_DL_train_val_test_prepared.pic
 with open(filename, 'rb') as f:
     Train_X, Train_Y, Val_X, Val_Y, Val_Y_ori, Test_X, Test_Y, Test_Y_ori, X_unlabeled = pickle.load(f)
 # Training and test set for GPS segments
-prop = 1
+prop = 0.2
 random.seed(7)
 np.random.seed(7)
 tf.set_random_seed(7)

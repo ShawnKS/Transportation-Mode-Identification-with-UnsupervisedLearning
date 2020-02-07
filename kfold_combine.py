@@ -41,7 +41,7 @@ acc_all = 0
 acc_w_all = 0
 for T in range(1):
 
-    for i in range(len(kfold_dataset)-4):
+    for i in range(len(kfold_dataset)):
         tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True))
         # sess = print(tf.Session(config=tf.ConfigProto(log_device_placement=True)))
         start_time = time.clock()
@@ -50,7 +50,7 @@ for T in range(1):
 
 
         # Training and test set for GPS segments
-        prop = 1
+        prop = 0.01
         random.seed(7)
         np.random.seed(7)
         tf.set_random_seed(7)
@@ -160,10 +160,10 @@ for T in range(1):
         a = np.hstack((a,e))
         Test_Y = kfold_dataset1[i][3]
         Test_Y_ori = kfold_dataset1[i][4]
-        Test_X = Test_X[a]
-        Test_Y = Test_Y[a]
-        Test_Y_ori = Test_Y_ori[a]
-        print(np.shape(Test_X))
+        # Test_X = Test_X[a]
+        # Test_Y = Test_Y[a]
+        # Test_Y_ori = Test_Y_ori[a]
+        # print(np.shape(Test_X))
         # sys.exit(0)        
         
         
@@ -171,7 +171,7 @@ for T in range(1):
 
         for i2 in range(ensemble_num):
             model_all[i2].compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-            offline_history = model_all[i2].fit(Train_X, Train_Y, epochs=50, batch_size=512, shuffle=False,
+            offline_history = model_all[i2].fit(Train_X, Train_Y, epochs=20, batch_size=512, shuffle=False,
                                         validation_data=(Train_X[:500], Train_Y[:500]))
             hist = offline_history
             print('Val_accuracy', hist.history['val_acc'])
